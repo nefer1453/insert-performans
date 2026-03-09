@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKT KONTROL - Insert Performans</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background-color: #f3f4f6; font-family: sans-serif; }
+        .yakut-yesili { background-color: #004d40; }
+        .turuncu { background-color: #E67E22; }
+        #pdf-template { display: none; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <div class="yakut-yesili p-6 text-white text-center">
+            <h1 class="text-2xl font-bold tracking-widest">SKT KONTROL</h1>
+            <p class="text-sm opacity-80">Insert Performans Analiz Sistemi</p>
+        </div>
+        <div class="p-6 space-y-6">
+            <div class="relative h-40 bg-black rounded-xl flex items-center justify-center overflow-hidden border-4 border-gray-800">
+                <div class="z-10 text-white text-center">
+                    <div class="w-48 h-1 bg-red-500 animate-pulse mb-2"></div>
+                    <p class="text-xs font-mono">BARKOD TARANIYOR...</p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase">Ürün Adı</label><input type="text" id="pName" value="Klasik Kaşar" class="w-full border-b-2 border-gray-200 py-2 outline-none font-semibold"></div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="block text-xs font-bold text-gray-500 uppercase">Normal (Kg)</label><input type="number" id="nSales" value="10" class="w-full border-b-2 border-gray-200 py-2 outline-none font-semibold"></div>
+                    <div class="flex-1"><label class="block text-xs font-bold text-gray-500 uppercase">Insert (Kg)</label><input type="number" id="iSales" value="45" class="w-full border-b-2 border-gray-200 py-2 outline-none font-semibold"></div>
+                </div>
+            </div>
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center">
+                <input type="file" id="photoInput" accept="image/*" class="hidden">
+                <label for="photoInput" class="cursor-pointer text-sm text-gray-600">📸 Teşhir Fotoğrafı Ekle</label>
+                <img id="preview" class="hidden mt-2 w-full h-32 object-cover rounded-lg">
+            </div>
+            <button onclick="generateReport()" class="turuncu w-full py-4 rounded-2xl text-white font-bold shadow-lg flex items-center justify-center gap-2">📄 RAPORU OLUŞTUR VE PAYLAŞ</button>
+        </div>
+    </div>
+    <div id="pdf-template" class="p-10 w-[800px] bg-white text-gray-800">
+        <div class="flex justify-between items-center border-b-8 border-orange-500 pb-4">
+            <div><h1 class="text-4xl font-black text-emerald-900">SKT KONTROL</h1><p class="text-xl text-orange-600 font-bold uppercase tracking-widest">Performans Analiz Raporu</p></div>
+            <div id="pdf-date" class="text-right text-gray-500 font-bold"></div>
+        </div>
+        <div class="flex mt-12 gap-10">
+            <div class="w-1/2">
+                <h3 class="yakut-yesili text-white px-4 py-2 inline-block rounded-t-lg">Ürün Kimliği</h3>
+                <div class="border-2 border-gray-100 p-4 rounded-lg"><img id="pdf-image" src="" class="w-full h-64 object-cover rounded-lg mb-4"><p class="text-2xl font-bold" id="pdf-pName"></p></div>
+            </div>
+            <div class="w-1/2 space-y-8">
+                <div><h3 class="bg-red-600 text-white px-4 py-2 inline-block rounded-t-lg">Satış Artış Oranı</h3><div class="bg-red-50 p-8 rounded-lg text-center border-2 border-red-100"><span class="text-6xl font-black text-red-600" id="pdf-percent"></span></div></div>
+                <div><h3 class="yakut-yesili text-white px-4 py-2 inline-block rounded-t-lg">AI Analiz Notu</h3><div class="bg-emerald-50 p-6 rounded-lg border-2 border-emerald-100 italic text-lg text-emerald-900"><p id="pdf-ai-text"></p></div></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('photoInput').onchange = e => {
+            const [file] = e.target.files;
+            if (file) {
+                const url = URL.createObjectURL(file);
+                document.getElementById('preview').src = url;
+                document.getElementById('preview').classList.remove('hidden');
+                document.getElementById('pdf-image').src = url;
+            }
+        };
+        async function generateReport() {
+            const name = document.getElementById('pName').value;
+            const normal = parseFloat(document.getElementById('nSales').value);
+            const insert = parseFloat(document.getElementById('iSales').value);
+            const percent = ((insert - normal) / normal * 100).toFixed(0);
+            document.getElementById('pdf-pName').innerText = name;
+            document.getElementById('pdf-percent').innerText = `%${percent}`;
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString('tr-TR');
+            document.getElementById('pdf-ai-text').innerText = `${name} ürününde kampanya verimliliği %${percent} olarak gerçekleşti.`;
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block';
+            const opt = { margin: 0, filename: 'rapor.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            await html2pdf().set(opt).from(element).save();
+            element.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
