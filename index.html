@@ -3,146 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKT KONTROL - Insert Analiz</title>
+    <title>SKT KONTROL - Pro Asistan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         .yakut-yesili { background-color: #004d40; }
         .turuncu { background-color: #E67E22; }
-        .nav-btn { flex: 1; padding: 12px; font-weight: bold; transition: 0.3s; }
-        .active-tab { border-bottom: 4px solid #E67E22; color: #E67E22; }
-        #pdf-template { position: absolute; left: -9999px; top: -9999px; }
+        .nav-btn { flex: 1; padding: 15px; font-weight: 800; transition: 0.3s; text-transform: uppercase; font-size: 0.75rem; }
+        .active-tab { border-bottom: 5px solid #E67E22; color: #E67E22; background: #fff; }
+        #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; border: 4px solid #004d40; }
+        #pdf-template { position: absolute; left: -9999px; }
+        .plus-btn { background: #f3f4f6; padding: 8px 12px; border-radius: 8px; font-weight: bold; border: 1px solid #ddd; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col">
-        <div class="yakut-yesili p-6 text-white text-center">
-            <h1 class="text-2xl font-bold tracking-widest uppercase">SKT KONTROL</h1>
-            <p class="text-xs opacity-75">Insert Performans & Kayıt Sistemi</p>
+<body class="bg-gray-50 font-sans select-none">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col">
+        <div class="yakut-yesili p-6 text-white text-center shadow-lg">
+            <h1 class="text-3xl font-black tracking-tighter italic">SKT KONTROL v2.0</h1>
+            <p class="text-[10px] opacity-70 tracking-widest uppercase font-bold">Şarküteri Performans & Analiz</p>
         </div>
-        <div class="flex bg-white border-b sticky top-0 z-50">
-            <button onclick="showTab('kayit')" id="btn-kayit" class="nav-btn active-tab uppercase text-sm">Ürün Kayıt</button>
-            <button onclick="showTab('rapor')" id="btn-rapor" class="nav-btn uppercase text-sm text-gray-400">Rapor Hazırla</button>
+
+        <div class="flex bg-gray-100 border-b sticky top-0 z-50">
+            <button onclick="showTab('kayit')" id="btn-kayit" class="nav-btn active-tab">💾 ÜRÜN KAYIT</button>
+            <button onclick="showTab('rapor')" id="btn-rapor" class="nav-btn text-gray-400">📊 RAPOR HAZIRLA</button>
         </div>
-        <div id="tab-kayit" class="p-6 space-y-5">
-            <h2 class="font-bold text-gray-700 border-l-4 border-emerald-800 pl-2 uppercase font-sans">Yeni Ürün Ekle</h2>
+
+        <div class="px-6 py-4 bg-white">
+            <div id="reader" class="mb-4 shadow-2xl"></div>
+            <button id="camBtn" onclick="toggleScanner()" class="w-full yakut-yesili text-white p-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg transform active:scale-95 transition-all uppercase">
+                <span class="text-xl">📷</span> Canlı Barkod Tara
+            </button>
+        </div>
+
+        <div id="tab-kayit" class="p-6 space-y-6 pt-0">
             <div class="space-y-4">
-                <input type="text" id="regBarkod" placeholder="Barkod" class="w-full border-b-2 p-2 outline-none focus:border-emerald-700 font-mono">
-                <input type="text" id="regName" placeholder="Ürün Adı" class="w-full border-b-2 p-2 outline-none focus:border-emerald-700">
-                <input type="number" id="regPrice" placeholder="Normal Fiyat (₺)" class="w-full border-b-2 p-2 outline-none focus:border-emerald-700">
-                <button onclick="saveProduct()" class="yakut-yesili w-full py-4 rounded-xl text-white font-bold shadow-lg uppercase">Sisteme Kaydet</button>
+                <input type="text" id="regBarkod" placeholder="Barkod No" class="w-full border-b-4 border-gray-100 p-3 outline-none focus:border-emerald-700 font-mono text-xl bg-gray-50 rounded-t-lg">
+                <input type="text" id="regName" placeholder="Ürün İsmi" class="w-full border-b-4 border-gray-100 p-3 outline-none focus:border-emerald-700 text-lg bg-gray-50">
+                <input type="number" id="regPrice" placeholder="Satış Fiyatı (₺)" class="w-full border-b-4 border-gray-100 p-3 outline-none focus:border-emerald-700 text-lg bg-gray-50">
+                <button onclick="saveProduct()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-xl uppercase tracking-wider transform active:scale-95 transition-all">Sisteme İşle</button>
             </div>
-            <div id="productCounter" class="text-center text-xs text-gray-400 font-bold uppercase"></div>
+            <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div id="productCounter" class="text-xs font-black text-emerald-800 uppercase"></div>
+                <button onclick="exportData()" class="text-[10px] font-bold text-gray-400 underline uppercase">Veriyi Yedekle</button>
+            </div>
         </div>
-        <div id="tab-rapor" class="hidden p-6 space-y-6">
-            <div class="h-40 bg-black rounded-2xl relative flex items-center justify-center overflow-hidden border-4 border-gray-800 shadow-inner">
-                <div class="z-10 text-white text-center">
-                    <div class="w-40 h-1 bg-red-600 animate-bounce mb-2 mx-auto"></div>
-                    <p class="text-[10px] font-mono uppercase">Barkod Bekleniyor...</p>
-                </div>
+
+        <div id="tab-rapor" class="hidden p-6 space-y-6 pt-0">
+            <input type="text" id="reportBarkod" placeholder="Okutulan Barkod" class="w-full border-b-4 border-gray-100 p-3 font-mono text-xl text-center outline-none bg-emerald-50 rounded-lg">
+            
+            <div class="bg-gray-900 p-5 rounded-3xl shadow-2xl border-l-8 border-orange-500">
+                <p id="dispName" class="font-black text-xl text-white uppercase italic tracking-tighter">Ürün: Seçilmedi</p>
+                <p id="dispPrice" class="text-orange-400 font-bold uppercase text-xs mt-1">Fiyat: 0.00 ₺</p>
             </div>
-            <div class="space-y-4">
-                <div class="flex gap-2">
-                    <input type="text" id="reportBarkod" placeholder="Barkodu Gir" class="flex-1 border-b-2 p-2 font-mono outline-none">
-                    <button onclick="loadProduct()" class="bg-gray-800 text-white px-4 rounded-lg text-xs font-bold uppercase">Getir</button>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-xl">
-                    <p id="dispName" class="font-bold text-lg text-gray-800 italic uppercase">Ürün: ---</p>
-                    <p id="dispPrice" class="text-sm text-gray-500 font-semibold uppercase">Fiyat: ---</p>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-1">
-                        <label class="text-[10px] font-bold text-gray-400 uppercase">Normal Satış (Adet)</label>
-                        <input type="number" id="nSales" class="w-full border-b-2 p-2 outline-none focus:border-orange-500 font-bold">
-                    </div>
-                    <div class="flex-1">
-                        <label class="text-[10px] font-bold text-gray-400 uppercase">Insert Satış (Adet)</label>
-                        <input type="number" id="iSales" class="w-full border-b-2 p-2 outline-none focus:border-orange-500 font-bold">
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Normal (Adet)</label>
+                    <input type="number" id="nSales" class="w-full border-2 border-gray-100 p-4 rounded-2xl text-center font-black text-xl bg-white">
+                    <div class="flex justify-between gap-1">
+                        <button onclick="addVal('nSales', 10)" class="plus-btn text-[10px]">+10</button>
+                        <button onclick="addVal('nSales', 50)" class="plus-btn text-[10px]">+50</button>
                     </div>
                 </div>
-                <div class="border-2 border-dashed rounded-xl p-4 text-center">
-                    <input type="file" id="photoInput" accept="image/*" class="hidden">
-                    <label for="photoInput" class="cursor-pointer text-sm font-bold text-gray-500 block uppercase">📸 Reyon Fotoğrafı Ekle</label>
-                    <img id="preview" class="hidden mt-2 w-full h-32 object-cover rounded-lg shadow-md">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-orange-500">Insert (Adet)</label>
+                    <input type="number" id="iSales" class="w-full border-2 border-orange-100 p-4 rounded-2xl text-center font-black text-xl bg-orange-50 text-orange-600">
+                    <div class="flex justify-between gap-1">
+                        <button onclick="addVal('iSales', 10)" class="plus-btn text-[10px]">+10</button>
+                        <button onclick="addVal('iSales', 50)" class="plus-btn text-[10px]">+50</button>
+                    </div>
                 </div>
-                <button onclick="generateReport()" class="turuncu w-full py-4 rounded-xl text-white font-black shadow-xl uppercase">📄 Raporu Hazırla ve Paylaş</button>
             </div>
+
+            <div class="border-4 border-dotted border-gray-200 rounded-3xl p-6 text-center bg-gray-50 relative overflow-hidden">
+                <input type="file" id="photoInput" accept="image/*" class="hidden">
+                <label for="photoInput" class="cursor-pointer">
+                    <span class="text-3xl block">🖼️</span>
+                    <span class="text-[10px] font-black text-gray-500 uppercase">Teşhir Fotoğrafı Seç</span>
+                </label>
+                <img id="preview" class="hidden mt-4 w-full h-48 object-cover rounded-2xl shadow-lg border-2 border-white">
+            </div>
+
+            <button onclick="generateReport()" class="turuncu w-full py-5 rounded-3xl text-white font-black shadow-2xl uppercase tracking-tighter flex items-center justify-center gap-3 transform active:scale-95 transition-all">
+                <span class="text-xl">📄</span> PDF Analiz Raporu Oluştur
+            </button>
         </div>
     </div>
-    <div id="pdf-template" class="p-10 w-[800px] bg-white text-gray-900 border-[20px] border-gray-50">
-        <div class="flex justify-between items-center border-b-8 border-orange-500 pb-6">
+
+    <div id="pdf-template" class="p-12 w-[850px] bg-white text-gray-900">
+        <div class="flex justify-between items-end border-b-[12px] border-emerald-900 pb-8">
             <div>
-                <h1 class="text-5xl font-black text-emerald-950 tracking-tighter">SKT KONTROL</h1>
-                <p class="text-2xl text-orange-600 font-bold uppercase tracking-[10px]">PERFORMANS ANALİZİ</p>
+                <h1 class="text-6xl font-black text-emerald-950 italic">SKT KONTROL</h1>
+                <p class="text-2xl text-orange-600 font-bold uppercase tracking-[12px] mt-2">PERFORMANS RAPORU</p>
             </div>
-            <div id="pdf-date" class="text-xl font-mono text-gray-400"></div>
+            <div id="pdf-date" class="text-xl font-bold text-gray-400 border-l-4 border-gray-200 pl-4"></div>
         </div>
-        <div class="flex mt-12 gap-10">
+        <div class="flex mt-14 gap-12">
             <div class="w-1/2">
-                <h3 class="yakut-yesili text-white px-6 py-2 text-lg font-bold rounded-t-2xl uppercase">Ürün Ve Teşhir</h3>
-                <div class="border-4 border-gray-100 p-4 rounded-b-2xl shadow-sm">
-                    <img id="pdf-image" src="" class="w-full h-[400px] object-cover rounded-xl mb-6 shadow-md">
-                    <p class="text-3xl font-black text-emerald-900 mb-2 uppercase" id="pdf-pName"></p>
-                    <div class="flex justify-between font-bold text-gray-500 uppercase">
-                        <span id="pdf-barkod"></span>
-                        <span id="pdf-pPrice"></span>
+                <h3 class="yakut-yesili text-white px-8 py-3 text-xl font-black rounded-t-3xl uppercase tracking-widest italic">Ürün Görseli</h3>
+                <div class="border-[6px] border-gray-50 p-6 rounded-b-3xl shadow-xl bg-gray-50">
+                    <img id="pdf-image" class="w-full h-[500px] object-cover rounded-2xl shadow-inner border-4 border-white">
+                    <div class="mt-6 p-4 bg-white rounded-xl">
+                        <p class="text-4xl font-black text-emerald-900 uppercase" id="pdf-pName"></p>
+                        <p class="text-xl font-bold text-orange-500 mt-2" id="pdf-barkod"></p>
                     </div>
                 </div>
             </div>
-            <div class="w-1/2 space-y-8">
-                <div>
-                    <h3 class="bg-red-600 text-white px-6 py-2 text-lg font-bold rounded-t-2xl uppercase italic">Satış Artış Performansı</h3>
-                    <div class="bg-red-50 p-12 rounded-b-2xl border-x-4 border-b-4 border-red-100 text-center">
-                        <span class="text-8xl font-black text-red-600" id="pdf-percent"></span>
-                        <p class="text-red-400 font-bold uppercase mt-2 tracking-widest text-sm">Adet Bazlı Büyüme</p>
+            <div class="w-1/2 space-y-10">
+                <div class="relative">
+                    <h3 class="bg-red-600 text-white px-8 py-3 text-xl font-black rounded-t-3xl uppercase italic shadow-lg">Büyüme Analizi</h3>
+                    <div class="bg-red-50 p-14 rounded-b-3xl border-b-[10px] border-red-200 text-center">
+                        <span class="text-[120px] font-black text-red-600 leading-none" id="pdf-percent"></span>
+                        <p class="text-red-400 font-black uppercase mt-4 tracking-[5px]">Satış Artış Oranı</p>
                     </div>
                 </div>
-                <div class="bg-emerald-50 p-8 rounded-3xl border-2 border-emerald-100">
-                    <h4 class="text-emerald-900 font-black uppercase mb-4 text-sm tracking-widest flex items-center gap-2">
-                        <span class="w-3 h-3 bg-emerald-600 rounded-full"></span> AI DESTEKLİ ANALİZ NOTU
+                <div class="bg-emerald-50 p-10 rounded-[40px] border-4 border-emerald-100 shadow-inner">
+                    <h4 class="text-emerald-900 font-black uppercase mb-6 text-sm tracking-[4px] flex items-center gap-3">
+                        <span class="w-4 h-4 bg-emerald-600 rounded-full animate-pulse"></span> AI ANALİZ MOTORU
                     </h4>
-                    <p id="pdf-ai-text" class="text-xl text-emerald-800 leading-relaxed font-medium italic"></p>
+                    <p id="pdf-ai-text" class="text-2xl text-emerald-800 leading-relaxed font-bold italic"></p>
                 </div>
             </div>
         </div>
-        <div class="mt-20 flex justify-between items-center text-gray-300 font-bold border-t pt-4 italic uppercase">
-            <span>Modül: Insert Analyzer v1.2</span>
-            <span>İmza: ____________________</span>
+        <div class="mt-20 pt-10 border-t-2 border-dashed flex justify-between font-black text-gray-300 italic uppercase">
+            <span>SKT_KONTROL_SYSTEM_v2.0_CERTIFIED</span>
+            <span>MAĞAZA SORUMLUSU: SELÇUK</span>
         </div>
     </div>
+
     <script>
         let db = JSON.parse(localStorage.getItem('skt_products')) || {};
+        let html5QrCode;
+        let activeTab = 'kayit';
+        const beep = new Audio('https://www.soundjay.com/buttons/beep-07.mp3');
+
         function showTab(tab) {
+            activeTab = tab;
             document.getElementById('tab-kayit').classList.toggle('hidden', tab !== 'kayit');
             document.getElementById('tab-rapor').classList.toggle('hidden', tab !== 'rapor');
-            document.getElementById('btn-kayit').className = `nav-btn uppercase text-sm ${tab === 'kayit' ? 'active-tab' : 'text-gray-400'}`;
-            document.getElementById('btn-rapor').className = `nav-btn uppercase text-sm ${tab === 'rapor' ? 'active-tab' : 'text-gray-400'}`;
+            document.getElementById('btn-kayit').className = `nav-btn ${tab === 'kayit' ? 'active-tab' : 'text-gray-400'}`;
+            document.getElementById('btn-rapor').className = `nav-btn ${tab === 'rapor' ? 'active-tab' : 'text-gray-400'}`;
         }
+
+        function toggleScanner() {
+            const r = document.getElementById('reader');
+            if (r.style.display === 'block') stopScanner();
+            else { r.style.display = 'block'; startScanner(); }
+        }
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 280, height: 180 } },
+                (txt) => {
+                    beep.play();
+                    if(activeTab === 'kayit') {
+                        document.getElementById('regBarkod').value = txt;
+                    } else {
+                        document.getElementById('reportBarkod').value = txt;
+                        loadProduct();
+                    }
+                    stopScanner();
+                }
+            ).catch(err => console.error(err));
+        }
+
+        function stopScanner() {
+            if(html5QrCode) html5QrCode.stop().then(() => document.getElementById('reader').style.display = 'none');
+        }
+
         function saveProduct() {
-            const barkod = document.getElementById('regBarkod').value;
-            const name = document.getElementById('regName').value;
-            const price = document.getElementById('regPrice').value;
-            if(!barkod || !name) return alert("HATA: Bilgileri Eksiksiz Gir!");
-            db[barkod] = { name, price };
+            const b = document.getElementById('regBarkod').value;
+            const n = document.getElementById('regName').value;
+            const p = document.getElementById('regPrice').value;
+            if(!b || !n) return alert("Hata: Eksik Bilgi!");
+            db[b] = { n, p };
             localStorage.setItem('skt_products', JSON.stringify(db));
-            alert("BAŞARILI: Ürün Sisteme Kaydedildi!");
-            document.getElementById('regBarkod').value = '';
-            document.getElementById('regName').value = '';
-            document.getElementById('regPrice').value = '';
+            alert("Ürün Kayıt Edildi!");
+            document.getElementById('regBarkod').value = ''; document.getElementById('regName').value = '';
             updateCounter();
         }
+
         function loadProduct() {
             const b = document.getElementById('reportBarkod').value;
             const p = db[b];
+            // Temizleme
+            document.getElementById('nSales').value = ''; document.getElementById('iSales').value = '';
             if(p) {
-                document.getElementById('dispName').innerText = `Ürün: ${p.name}`;
-                document.getElementById('dispPrice').innerText = `Normal Fiyat: ${p.price} ₺`;
-            } else alert("HATA: Bu Barkod Kayıtlı Değil!");
+                document.getElementById('dispName').innerText = `Ürün: ${p.n}`;
+                document.getElementById('dispPrice').innerText = `Fiyat: ${p.p} ₺`;
+            } else alert("Kayıt Bulunamadı!");
         }
+
+        function addVal(id, val) {
+            const el = document.getElementById(id);
+            el.value = (parseInt(el.value) || 0) + val;
+        }
+
         function updateCounter() {
-            document.getElementById('productCounter').innerText = `SİSTEMDE KAYITLI ÜRÜN: ${Object.keys(db).length}`;
+            document.getElementById('productCounter').innerText = `Kayıtlı Portföy: ${Object.keys(db).length} ÜRÜN`;
         }
         updateCounter();
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "skt_yedek.json");
+            dlAnchorElem.click();
+        }
+
         document.getElementById('photoInput').onchange = e => {
             const [file] = e.target.files;
             if (file) {
@@ -152,22 +222,28 @@
                 document.getElementById('pdf-image').src = url;
             }
         };
+
         async function generateReport() {
             const b = document.getElementById('reportBarkod').value;
             const p = db[b];
-            const normal = parseFloat(document.getElementById('nSales').value);
-            const insert = parseFloat(document.getElementById('iSales').value);
-            if(!p || isNaN(normal) || isNaN(insert)) return alert("HATA: Satış Adetlerini Gir!");
-            const percent = ((insert - normal) / normal * 100).toFixed(0);
-            document.getElementById('pdf-pName').innerText = p.name;
-            document.getElementById('pdf-barkod').innerText = `BARKOD: ${b}`;
-            document.getElementById('pdf-pPrice').innerText = `FİYAT: ${p.price} ₺`;
-            document.getElementById('pdf-percent').innerText = `%${percent}`;
+            const n = parseFloat(document.getElementById('nSales').value);
+            const i = parseFloat(document.getElementById('iSales').value);
+            if(!p || isNaN(n) || isNaN(i)) return alert("Satış Verilerini Gir!");
+            
+            const pcn = ((i - n) / n * 100).toFixed(0);
+            document.getElementById('pdf-pName').innerText = p.n;
+            document.getElementById('pdf-barkod').innerText = `BARKOD: ${b} | FİYAT: ${p.p} TL`;
+            document.getElementById('pdf-percent').innerText = `%${pcn}`;
             document.getElementById('pdf-date').innerText = new Date().toLocaleDateString('tr-TR');
-            document.getElementById('pdf-ai-text').innerText = `${p.name} ürününde satışlar %${percent} artarak büyük bir başarı göstermiştir. Bu insert çalışması adet bazlı hedeflere ulaşmıştır.`;
-            const element = document.getElementById('pdf-template');
-            const opt = { margin: 0, filename: `${p.name}_Raporu.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
-            await html2pdf().set(opt).from(element).save();
+            
+            let aiMsg = pcn > 100 ? "Olağanüstü bir başarı! Reyon yerleşimi ve insert fiyatı müşteriyi tam isabetle yakalamış." : 
+                        pcn > 50 ? "Oldukça verimli bir kampanya. Adet bazlı büyüme sürdürülebilir seviyede." : 
+                        "Kampanya hedeflerin altında kaldı, teşhir alanı revize edilmeli.";
+            document.getElementById('pdf-ai-text').innerText = `${p.n} ürününde ${aiMsg}`;
+
+            const opt = { margin: 0, filename: `ANALIZ_${p.n}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            await html2pdf().set(opt).from(document.getElementById('pdf-template')).save();
+            alert("Rapor Hazır! Şimdi WhatsApp grubuna gönder.");
         }
     </script>
 </body>
