@@ -3,26 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKT KONTROL - Pro Rapor</title>
+    <title>SKT KONTROL - Elite Rapor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
         .yakut-yesili { background-color: #004d40; }
         .turuncu { background-color: #E67E22; }
-        .nav-btn { flex: 1; padding: 15px; font-weight: 800; transition: 0.3s; text-transform: uppercase; font-size: 0.75rem; }
-        .active-tab { border-bottom: 5px solid #E67E22; color: #E67E22; background: #fff; }
+        .nav-btn { flex: 1; padding: 15px; font-weight: 800; text-transform: uppercase; font-size: 0.7rem; transition: 0.3s; }
+        .active-tab { border-bottom: 5px solid #E67E22; color: #E67E22; background: white; }
         #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; border: 4px solid #004d40; }
-        /* Rapor Taslak Alanı */
-        #report-container { width: 794px; padding: 40px; background: white; position: absolute; left: -9999px; top: 0; }
+        
+        /* PDF Render Area */
+        #pdf-render-area { width: 794px; position: absolute; left: -9999px; top: 0; background: white; }
+        .pdf-page { width: 794px; height: 1123px; padding: 50px; position: relative; box-sizing: border-box; background: white; overflow: hidden; }
+        
+        /* Cover Style */
+        .cover-page { background: linear-gradient(135deg, #002d26 0%, #004d40 100%); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body>
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col">
         <div class="yakut-yesili p-6 text-white text-center shadow-lg">
-            <h1 class="text-3xl font-black italic">SKT KONTROL v2.1</h1>
-            <p class="text-[10px] opacity-70 tracking-widest uppercase font-bold">Performans Analiz Sistemi</p>
+            <h1 class="text-3xl font-black italic tracking-tighter">SKT KONTROL <span class="text-orange-500">ELITE</span></h1>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px]">Premium Analysis System</p>
         </div>
 
         <div class="flex bg-gray-100 border-b sticky top-0 z-50">
@@ -30,88 +37,102 @@
             <button onclick="showTab('rapor')" id="btn-rapor" class="nav-btn text-gray-400">📊 RAPOR HAZIRLA</button>
         </div>
 
-        <div class="px-6 py-4 bg-white">
-            <div id="reader" class="mb-4 shadow-2xl"></div>
-            <button id="camBtn" onclick="toggleScanner()" class="w-full yakut-yesili text-white p-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg uppercase">
+        <div class="px-6 py-4">
+            <div id="reader" class="mb-4"></div>
+            <button onclick="toggleScanner()" class="w-full yakut-yesili text-white p-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg uppercase">
                 📷 BARKODU TARA
             </button>
         </div>
 
-        <div id="tab-kayit" class="p-6 space-y-6 pt-0">
-            <input type="text" id="regBarkod" placeholder="Barkod" class="w-full border-b-4 border-gray-100 p-3 outline-none focus:border-emerald-700 font-mono text-xl bg-gray-50">
-            <input type="text" id="regName" placeholder="Ürün İsmi" class="w-full border-b-4 border-gray-100 p-3 outline-none focus:border-emerald-700 text-lg">
-            <input type="number" id="regPrice" placeholder="Satış Fiyatı (₺)" class="w-full border-b-4 border-gray-100 p-3 outline-none focus:border-emerald-700">
-            <button onclick="saveProduct()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-xl uppercase">Sisteme İşle</button>
-            <div id="productCounter" class="text-center text-[10px] font-black text-emerald-800 uppercase"></div>
+        <div id="tab-kayit" class="p-6 space-y-4 pt-0">
+            <input type="text" id="regBarkod" placeholder="Barkod" class="w-full border-b-2 p-3 outline-none focus:border-emerald-700 font-mono text-xl">
+            <input type="text" id="regName" placeholder="Ürün İsmi" class="w-full border-b-2 p-3 outline-none">
+            <input type="number" id="regPrice" placeholder="Satış Fiyatı (₺)" class="w-full border-b-2 p-3 outline-none">
+            <button onclick="saveProduct()" class="w-full bg-emerald-700 text-white py-4 rounded-xl font-black shadow-xl uppercase">Sisteme İşle</button>
+            <div id="productCounter" class="text-center text-[10px] font-bold text-gray-400 uppercase"></div>
         </div>
 
-        <div id="tab-rapor" class="hidden p-6 space-y-6 pt-0">
-            <div class="bg-gray-900 p-5 rounded-3xl shadow-2xl border-l-8 border-orange-500">
-                <input type="text" id="reportBarkod" placeholder="Okutulan Barkod" class="w-full bg-transparent text-white font-mono text-xl text-center outline-none mb-2">
-                <p id="dispName" class="font-black text-xl text-orange-500 uppercase italic">Ürün: Seçilmedi</p>
+        <div id="tab-rapor" class="hidden p-6 space-y-5 pt-0">
+            <div class="bg-gray-900 p-4 rounded-2xl shadow-xl">
+                <input type="text" id="reportBarkod" placeholder="Barkod Okut" class="w-full bg-transparent text-white font-mono text-center outline-none mb-1">
+                <p id="dispName" class="text-orange-500 font-black text-center uppercase italic">Ürün Bekleniyor...</p>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-gray-400 uppercase">Yapılan İşlem (Teşhir Tipi)</label>
+                <select id="actionType" class="w-full border-2 p-3 rounded-xl font-bold bg-white">
+                    <option value="ÖZEL REYON TEŞHİRİ">Özel Reyon Teşhiri</option>
+                    <option value="GONDOL BAŞI UYGULAMASI">Gondol Başı Uygulaması</option>
+                    <option value="RAF GENİŞLETME ÇALIŞMASI">Raf Genişletme Çalışması</option>
+                    <option value="TADIM VE TANITIM STANDI">Tadım ve Tanıtım Standı</option>
+                </select>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-gray-400 uppercase">Normal (Adet)</label>
-                    <input type="number" id="nSales" class="w-full border-2 border-gray-100 p-4 rounded-2xl text-center font-black text-xl bg-white">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-gray-400 uppercase text-orange-500">Insert (Adet)</label>
-                    <input type="number" id="iSales" class="w-full border-2 border-orange-100 p-4 rounded-2xl text-center font-black text-xl bg-orange-50 text-orange-600">
-                </div>
+                <input type="number" id="nSales" placeholder="Normal Satış" class="border-2 p-4 rounded-xl text-center font-bold">
+                <input type="number" id="iSales" placeholder="Insert Satış" class="border-2 p-4 rounded-xl text-center font-bold bg-orange-50 border-orange-200">
             </div>
 
-            <div class="border-4 border-dotted border-gray-200 rounded-3xl p-6 text-center bg-gray-50">
+            <div class="border-4 border-dashed border-gray-200 rounded-2xl p-4 text-center">
                 <input type="file" id="photoInput" accept="image/*" class="hidden">
-                <label for="photoInput" class="cursor-pointer font-black text-gray-500 block uppercase">📸 Fotoğraf Ekle</label>
-                <img id="preview" class="hidden mt-4 w-full h-48 object-cover rounded-2xl shadow-lg border-2 border-white">
+                <label for="photoInput" class="cursor-pointer font-black text-gray-400 block uppercase">📸 TEŞHİR GÖRSELİ EKLE</label>
+                <img id="preview" class="hidden mt-2 w-full h-40 object-cover rounded-xl shadow-lg border-2 border-white">
             </div>
 
-            <button onclick="generateReport()" class="turuncu w-full py-5 rounded-3xl text-white font-black shadow-2xl uppercase flex items-center justify-center gap-3">
-                📄 PDF RAPORU OLUŞTUR
-            </button>
+            <button onclick="generateReport()" class="turuncu w-full py-5 rounded-2xl text-white font-black shadow-2xl uppercase">📄 ELITE RAPORU OLUŞTUR</button>
         </div>
     </div>
 
-    <div id="report-container">
-        <div style="background: #004d40; padding: 40px; color: white; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="font-size: 50px; font-weight: 900; margin: 0; letter-spacing: -2px;">SKT KONTROL</h1>
-                <p style="text-transform: uppercase; letter-spacing: 8px; font-weight: 700; color: #E67E22; margin-top: 5px;">İNSERT ANALİZ RAPORU</p>
+    <div id="pdf-render-area">
+        <div class="pdf-page cover-page">
+            <div style="border: 10px solid #E67E22; padding: 60px; width: 80%;">
+                <h1 style="font-size: 80px; font-weight: 900; letter-spacing: -4px; margin: 0;">SKT KONTROL</h1>
+                <div style="height: 5px; background: #E67E22; width: 100px; margin: 30px auto;"></div>
+                <h2 style="font-size: 30px; font-weight: 400; text-transform: uppercase; letter-spacing: 15px;">PERFORMANS</h2>
+                <h3 style="font-size: 20px; font-weight: 700; color: #E67E22; text-transform: uppercase; margin-top: 20px;">İNSERT ANALİZ VE VERİMLİLİK RAPORU</h3>
             </div>
-            <div id="pdf-date" style="font-size: 20px; font-weight: 700; border-left: 4px solid #E67E22; padding-left: 20px;"></div>
-        </div>
-        
-        <div style="display: flex; gap: 40px; margin-top: 40px;">
-            <div style="flex: 1;">
-                <div style="background: #f8fafc; border: 4px solid #e2e8f0; padding: 20px; border-radius: 20px;">
-                    <img id="pdf-image" style="width: 100%; height: 450px; object-fit: cover; border-radius: 15px; border: 5px solid white; box-shadow: 0 10px 15px rgba(0,0,0,0.1);">
-                    <h2 id="pdf-pName" style="font-size: 32px; font-weight: 900; color: #004d40; margin-top: 25px; text-transform: uppercase;"></h2>
-                    <p id="pdf-barkod" style="font-size: 18px; color: #64748b; font-weight: 700; border-top: 2px solid #f1f5f9; padding-top: 15px;"></p>
-                </div>
-            </div>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 30px;">
-                <div style="background: #fef2f2; border: 4px solid #fee2e2; border-radius: 20px; text-align: center; padding: 40px;">
-                    <p style="text-transform: uppercase; font-weight: 900; color: #ef4444; font-size: 14px; letter-spacing: 2px; margin-bottom: 10px;">Satış Artış Oranı</p>
-                    <h1 id="pdf-percent" style="font-size: 120px; font-weight: 900; color: #dc2626; line-height: 1; margin: 0;"></h1>
-                </div>
-                <div style="background: #ecfdf5; border: 4px solid #d1fae5; border-radius: 20px; padding: 30px;">
-                    <h3 style="color: #065f46; font-weight: 900; font-size: 12px; letter-spacing: 3px; margin-bottom: 20px; border-bottom: 2px solid #a7f3d0; padding-bottom: 10px;">AI ANALİZ MOTORU</h3>
-                    <p id="pdf-ai-text" style="font-size: 20px; color: #064e3b; font-weight: 600; font-style: italic; line-height: 1.5;"></p>
-                </div>
+            <div style="position: absolute; bottom: 80px; width: 100%; font-weight: 700;">
+                <p style="font-size: 24px;" id="pdf-date-cover"></p>
+                <p style="text-transform: uppercase; letter-spacing: 5px; color: #E67E22; margin-top: 10px;">Hazırlayan: SELÇUK</p>
             </div>
         </div>
-        <div style="margin-top: 60px; border-top: 2px dashed #cbd5e1; padding-top: 20px; display: flex; justify-content: space-between; font-weight: 800; color: #94a3b8; font-size: 14px;">
-            <span>SİSTEM: INSERT PERFORMANCE ANALYZER V2.1</span>
-            <span>İMZA: SELÇUK</span>
+
+        <div class="pdf-page">
+            <div style="display: flex; gap: 40px; height: 100%;">
+                <div style="flex: 1.2; display: flex; flex-direction: column;">
+                    <div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 30px; padding: 30px; flex-grow: 1;">
+                        <img id="pdf-image" style="width: 100%; height: 600px; object-fit: cover; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+                        <div style="margin-top: 40px;">
+                            <h2 id="pdf-pName" style="font-size: 42px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase; line-height: 1;"></h2>
+                            <div style="height: 4px; background: #004d40; width: 60px; margin: 20px 0;"></div>
+                            <p id="pdf-barkod" style="font-size: 18px; color: #64748b; font-weight: 700; margin: 5px 0;"></p>
+                            <p id="pdf-pPrice" style="font-size: 24px; color: #E67E22; font-weight: 900;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="flex: 0.8; display: flex; flex-direction: column; gap: 30px;">
+                    <div style="background: #004d40; color: white; border-radius: 30px; padding: 40px; text-align: center;">
+                        <p style="font-size: 12px; font-weight: 800; text-transform: uppercase; opacity: 0.6; letter-spacing: 2px; margin-bottom: 10px;">UYGULANAN İŞLEM</p>
+                        <h2 id="pdf-action" style="font-size: 28px; font-weight: 900; line-height: 1.2; margin: 0;"></h2>
+                    </div>
+
+                    <div style="background: #fff; border: 4px solid #ecfdf5; background: #f0fdf4; border-radius: 30px; padding: 40px; flex-grow: 1;">
+                        <h4 style="color: #065f46; font-weight: 900; font-size: 12px; letter-spacing: 3px; margin-bottom: 25px; border-bottom: 2px solid #a7f3d0; padding-bottom: 10px; display: inline-block;">AI PERFORMANS ANALİZİ</h4>
+                        <p id="pdf-ai-text" style="font-size: 22px; color: #064e3b; font-weight: 600; font-style: italic; line-height: 1.6;"></p>
+                    </div>
+                    
+                    <div style="text-align: center; color: #cbd5e1; font-weight: 900; font-size: 12px; letter-spacing: 5px;">
+                        SKT KONTROL ELITE v2.5
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         let db = JSON.parse(localStorage.getItem('skt_products')) || {};
         let html5QrCode;
-        const beep = new Audio('https://www.soundjay.com/buttons/beep-07.mp3');
 
         function showTab(tab) {
             document.getElementById('tab-kayit').classList.toggle('hidden', tab !== 'kayit');
@@ -128,15 +149,11 @@
 
         function startScanner() {
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 },
-                (txt) => {
-                    beep.play();
-                    document.getElementById('regBarkod').value = txt;
-                    document.getElementById('reportBarkod').value = txt;
-                    loadProduct();
-                    stopScanner();
-                }
-            ).catch(err => console.error(err));
+            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => {
+                document.getElementById('regBarkod').value = txt;
+                document.getElementById('reportBarkod').value = txt;
+                loadProduct(); stopScanner();
+            });
         }
 
         function stopScanner() {
@@ -148,22 +165,18 @@
             const n = document.getElementById('regName').value;
             const p = document.getElementById('regPrice').value;
             if(!b || !n) return alert("Eksik bilgi!");
-            db[b] = { n, p };
-            localStorage.setItem('skt_products', JSON.stringify(db));
-            alert("Kaydedildi!");
-            updateCounter();
+            db[b] = { n, p }; localStorage.setItem('skt_products', JSON.stringify(db));
+            alert("Kaydedildi!"); updateCounter();
         }
 
         function loadProduct() {
             const b = document.getElementById('reportBarkod').value;
             const p = db[b];
-            if(p) {
-                document.getElementById('dispName').innerText = `Ürün: ${p.n}`;
-            }
+            if(p) document.getElementById('dispName').innerText = `Ürün: ${p.n}`;
         }
 
         function updateCounter() {
-            document.getElementById('productCounter').innerText = `Portföy: ${Object.keys(db).length} Ürün`;
+            document.getElementById('productCounter').innerText = `Kayıtlı Portföy: ${Object.keys(db).length} Ürün`;
         }
         updateCounter();
 
@@ -182,33 +195,36 @@
             const p = db[b];
             const n = parseFloat(document.getElementById('nSales').value);
             const i = parseFloat(document.getElementById('iSales').value);
-            if(!p || isNaN(n) || isNaN(i)) return alert("Satış verilerini gir!");
+            const action = document.getElementById('actionType').value;
+            if(!p || isNaN(n) || isNaN(i)) return alert("Verileri eksiksiz gir!");
 
             const pcn = ((i - n) / n * 100).toFixed(0);
             
-            // PDF Taslağını Doldur
+            // PDF Verilerini Doldur
+            document.getElementById('pdf-date-cover').innerText = new Date().toLocaleDateString('tr-TR');
             document.getElementById('pdf-pName').innerText = p.n;
-            document.getElementById('pdf-barkod').innerText = `BARKOD: ${b} | FİYAT: ${p.p} TL`;
-            document.getElementById('pdf-percent').innerText = `%${pcn}`;
-            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString('tr-TR');
-            document.getElementById('pdf-ai-text').innerText = `${p.n} ürününde kampanya dönemi boyunca %${pcn} oranında satış ivmesi yakalanmıştır. Bu başarı, reyon teşhirinin doğruluğunu ve fiyatlandırmanın müşterideki etkisini kanıtlamaktadır.`;
-
-            const container = document.getElementById('report-container');
-            container.style.position = 'static'; // Render için görünür yap
+            document.getElementById('pdf-barkod').innerText = `SKU: ${b}`;
+            document.getElementById('pdf-pPrice').innerText = `Birim Fiyat: ${p.p} TL`;
+            document.getElementById('pdf-action').innerText = action;
             
-            const canvas = await html2canvas(container, { scale: 2, useCORS: true });
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            let aiMsg = `${p.n} ürününde gerçekleştirilen ${action} çalışması sonucunda satışlarda %${pcn} oranında muazzam bir büyüme yakalanmıştır. Bu sonuç, uygulanan reyon stratejisinin doğruluğunu kanıtlar niteliktedir.`;
+            document.getElementById('pdf-ai-text').innerText = aiMsg;
+
+            const renderArea = document.getElementById('pdf-render-area');
+            const pages = renderArea.querySelectorAll('.pdf-page');
             
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = (canvas.height * pageWidth) / canvas.width;
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
-            pdf.save(`ANALIZ_${p.n}.pdf`);
-            
-            container.style.position = 'absolute'; // Geri gizle
-            alert("Rapor Hazır!");
+
+            for (let j = 0; j < pages.length; j++) {
+                const canvas = await html2canvas(pages[j], { scale: 2, useCORS: true });
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                if (j > 0) pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+            }
+
+            pdf.save(`ELITE_ANALIZ_${p.n}.pdf`);
+            alert("Rapor Başarıyla Oluşturuldu!");
         }
     </script>
 </body>
