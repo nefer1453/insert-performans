@@ -3,33 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT PERFORMANS - Elite Smart</title>
+    <title>İNSERT PERFORMANS - Elite Pro v3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
         .yakut-yesili { background-color: #004d40; }
         .turuncu { background-color: #E67E22; }
         .nav-btn { flex: 1; padding: 15px; font-weight: 800; text-transform: uppercase; font-size: 0.7rem; }
         .active-tab { border-bottom: 5px solid #E67E22; color: #E67E22; background: white; }
         #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; border: 4px solid #004d40; }
+        .search-results { position: absolute; top: 100%; left: 0; right: 0; background: white; z-index: 100; max-height: 200px; overflow-y: auto; border-radius: 0 0 15px 15px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; display: none; }
+        .search-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; }
+        .search-item:hover { background: #f0fdf4; }
         #pdf-render-area { width: 794px; position: absolute; left: -9999px; top: 0; background: white; }
         .pdf-page { width: 794px; height: 1123px; padding: 50px; position: relative; box-sizing: border-box; background: white; }
         .cover-page { background: linear-gradient(135deg, #002d26 0%, #004d40 100%); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        /* Arama Sonuçları Listesi */
-        .search-results { position: absolute; top: 100%; left: 0; right: 0; background: white; z-index: 100; max-height: 200px; overflow-y: auto; border-radius: 0 0 15px 15px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; display: none; }
-        .search-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; }
-        .search-item:hover { background: #f0fdf4; color: #004d40; }
     </style>
 </head>
 <body>
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col">
-        <div class="yakut-yesili p-6 text-white text-center">
+        <div class="yakut-yesili p-6 text-white text-center shadow-lg">
             <h1 class="text-3xl font-black italic uppercase tracking-tighter">İnsert Performans</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px]">Elite Smart Analysis</p>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px]">Elite Data Integrity</p>
         </div>
 
         <div class="flex bg-gray-100 border-b sticky top-0 z-50">
@@ -39,77 +38,63 @@
 
         <div class="px-6 py-4 bg-white">
             <div id="reader" class="mb-4"></div>
-            <button onclick="toggleScanner()" class="w-full yakut-yesili text-white p-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg uppercase transform active:scale-95">
+            <button onclick="toggleScanner()" class="w-full yakut-yesili text-white p-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg uppercase">
                 📷 BARKODU TARA
             </button>
         </div>
 
         <div id="tab-kayit" class="p-6 space-y-4 pt-0">
-            <h2 class="font-bold text-gray-700 border-l-4 border-emerald-800 pl-2 uppercase text-sm">Ürün Portföyüne Ekle</h2>
-            <input type="text" id="regBarkod" placeholder="Barkod Numarası" class="w-full border-b-2 p-3 outline-none font-mono text-xl bg-gray-50 rounded">
-            <input type="text" id="regName" placeholder="Ürün İsmi (Örn: Pınar Labne)" class="w-full border-b-2 p-3 outline-none bg-gray-50 rounded">
-            <input type="text" id="regPrice" placeholder="Normal Satış Fiyatı (₺)" class="w-full border-b-2 p-3 outline-none bg-gray-50 rounded">
+            <div class="relative">
+                <input type="text" id="regSearch" onkeyup="filterProducts(this.value, 'reg')" placeholder="Mevcut Ürünlerde Ara / Seç..." class="w-full border-2 border-gray-100 p-3 rounded-xl outline-none focus:border-emerald-600 font-medium text-xs bg-gray-50 italic">
+                <div id="regResults" class="search-results"></div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <div class="space-y-3">
+                <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">Barkod *</label>
+                <input type="text" id="regBarkod" class="w-full border-b-2 p-2 outline-none font-mono text-lg focus:border-emerald-700"></div>
+                
+                <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">Ürün İsmi *</label>
+                <input type="text" id="regName" class="w-full border-b-2 p-2 outline-none focus:border-emerald-700"></div>
+                
+                <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">Normal Fiyat (₺) *</label>
+                <input type="text" id="regPrice" class="w-full border-b-2 p-2 outline-none focus:border-emerald-700"></div>
+            </div>
             
-            <div class="border-2 border-dashed border-emerald-200 rounded-xl p-4 text-center bg-emerald-50/30">
+            <div id="photoStatus" class="border-2 border-dashed border-red-200 rounded-xl p-4 text-center bg-red-50/30">
                 <input type="file" id="prodPhotoInput" accept="image/*" class="hidden">
-                <label for="prodPhotoInput" class="cursor-pointer font-bold text-emerald-700 block text-xs uppercase italic">📷 Ürün Fotoğrafı Çek</label>
+                <label for="prodPhotoInput" class="cursor-pointer font-bold text-red-700 block text-[10px] uppercase">📷 Ürün Fotoğrafı Çek * (GEREKLİ)</label>
                 <img id="regPreview" class="hidden mt-2 w-full h-40 object-cover rounded-lg shadow-md border-2 border-white">
             </div>
 
             <button onclick="saveProduct()" class="w-full bg-emerald-700 text-white py-4 rounded-2xl font-black shadow-xl uppercase transform active:scale-95 transition-all">Sisteme Kaydet</button>
-            <div id="productCounter" class="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest pt-2"></div>
+            <div id="productCounter" class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-2"></div>
         </div>
 
         <div id="tab-rapor" class="hidden p-6 space-y-5 pt-0">
-            <div class="space-y-3">
-                <div class="relative">
-                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kayıtlı Ürünlerde Ara</label>
-                    <input type="text" id="smartSearch" onkeyup="filterProducts(this.value)" placeholder="Ürün ismini yazmaya başla..." class="w-full border-2 border-emerald-100 p-3 rounded-xl outline-none focus:border-emerald-600 font-medium text-sm">
-                    <div id="searchResults" class="search-results"></div>
-                </div>
-
-                <div class="relative">
-                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Veya Barkodu Elle Gir</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="reportBarkod" placeholder="Barkod Numarası" class="flex-1 border-b-2 border-gray-200 p-3 font-mono text-lg outline-none focus:border-emerald-600">
-                        <button onclick="loadProductByBarcode()" class="bg-emerald-800 text-white px-4 rounded-xl font-bold text-xs uppercase">Getir</button>
-                    </div>
-                </div>
+            <div class="relative">
+                <input type="text" id="smartSearch" onkeyup="filterProducts(this.value, 'rep')" placeholder="Ürün Ara..." class="w-full border-2 border-orange-100 p-3 rounded-xl outline-none focus:border-orange-500 font-medium text-sm">
+                <div id="repResults" class="search-results"></div>
             </div>
 
-            <div class="bg-gray-900 p-5 rounded-3xl shadow-2xl border-l-8 border-orange-500 relative overflow-hidden">
-                <div class="absolute right-[-10px] top-[-10px] opacity-10 text-white text-6xl font-black italic uppercase">ELITE</div>
-                <p id="dispName" class="text-white font-black text-xl uppercase italic tracking-tighter leading-tight">Ürün: Seçilmedi</p>
-                <p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-1">Fiyat: ---</p>
-            </div>
-
-            <div class="space-y-1">
-                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Uygulanan Teşhir Tipi</label>
-                <select id="actionType" class="w-full border-2 p-3 rounded-xl font-bold bg-white text-sm focus:border-orange-500 outline-none">
-                    <option value="ÖZEL REYON TEŞHİRİ">Özel Reyon Teşhiri</option>
-                    <option value="GONDOL BAŞI UYGULAMASI">Gondol Başı Uygulaması</option>
-                    <option value="RAF GENİŞLETME ÇALIŞMASI">Raf Genişletme Çalışması</option>
-                </select>
+            <div class="bg-gray-900 p-4 rounded-2xl shadow-xl border-l-4 border-orange-500">
+                <input type="text" id="reportBarkod" placeholder="Barkod" class="w-full bg-transparent text-white font-mono text-center outline-none text-xl" readonly>
+                <p id="dispName" class="text-orange-500 font-black text-center uppercase italic text-xs mt-1">Ürün Bekleniyor...</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase text-center block">Normal Satış</label>
-                    <input type="number" id="nSales" placeholder="0" class="w-full border-2 p-4 rounded-2xl text-center font-black text-xl bg-white">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-orange-500 uppercase text-center block">İnsert Satış</label>
-                    <input type="number" id="iSales" placeholder="0" class="w-full border-2 border-orange-100 p-4 rounded-2xl text-center font-black text-xl bg-orange-50 text-orange-600">
-                </div>
+                <input type="number" id="nSales" placeholder="Normal Satış" class="border-2 p-4 rounded-xl text-center font-bold">
+                <input type="number" id="iSales" placeholder="İnsert Satış" class="border-2 p-4 rounded-xl text-center font-bold bg-orange-50">
             </div>
 
             <div class="border-4 border-dashed border-gray-100 rounded-2xl p-4 text-center bg-gray-50">
                 <input type="file" id="reportPhotoInput" accept="image/*" class="hidden">
-                <label for="reportPhotoInput" class="cursor-pointer font-black text-gray-500 block uppercase text-[10px]">📸 Güncel Teşhir Görseli Ekle</label>
+                <label for="reportPhotoInput" class="cursor-pointer font-black text-gray-400 block uppercase text-[10px]">📸 Teşhir Görseli Ekle</label>
                 <img id="reportPreview" class="hidden mt-2 w-full h-40 object-cover rounded-xl shadow-md border-2 border-white">
             </div>
 
-            <button onclick="generateReport()" class="turuncu w-full py-5 rounded-3xl text-white font-black shadow-2xl uppercase tracking-tighter transform active:scale-95 transition-all">📄 Elite Raporu Oluştur</button>
+            <button onclick="generateReport()" class="turuncu w-full py-5 rounded-2xl text-white font-black shadow-2xl uppercase">📄 Elite Raporu Oluştur</button>
         </div>
     </div>
 
@@ -139,13 +124,9 @@
                     </div>
                 </div>
                 <div style="flex: 0.9; display: flex; flex-direction: column; gap: 20px;">
-                    <div style="background: #004d40; color: white; border-radius: 25px; padding: 25px; text-align: center;">
-                        <p style="font-size: 10px; font-weight: 800; opacity: 0.6; margin-bottom: 5px;">UYGULANAN İŞLEM</p>
-                        <h2 id="pdf-action" style="font-size: 20px; font-weight: 900; margin: 0;"></h2>
-                    </div>
+                    <div style="background: #004d40; color: white; border-radius: 25px; padding: 25px; text-align: center;"><h2 style="font-size: 20px; font-weight: 900; margin: 0;">PERFORMANS ANALİZİ</h2></div>
                     <img id="pdf-report-image" style="width: 100%; height: 350px; object-fit: cover; border-radius: 20px; background: #eee;">
                     <div style="background: #fff; border: 4px solid #f1f5f9; border-radius: 25px; padding: 25px; flex-grow: 1; border-top: 8px solid #E67E22;">
-                        <h4 style="color: #004d40; font-weight: 900; font-size: 11px; letter-spacing: 2px; margin-bottom: 10px;">SATIŞ ANALİZİ</h4>
                         <p id="pdf-ai-text" style="font-size: 19px; color: #334155; font-weight: 600; font-style: italic; line-height: 1.4;"></p>
                     </div>
                 </div>
@@ -164,9 +145,9 @@
             document.getElementById('btn-rapor').className = `nav-btn ${tab === 'rapor' ? 'active-tab' : 'text-gray-400'}`;
         }
 
-        // Akıllı Filtreleme
-        function filterProducts(val) {
-            const resultsDiv = document.getElementById('searchResults');
+        // Akıllı Filtreleme (Kayıt ve Rapor ekranı için)
+        function filterProducts(val, screen) {
+            const resultsDiv = document.getElementById(screen === 'reg' ? 'regResults' : 'repResults');
             resultsDiv.innerHTML = '';
             if (val.length < 1) { resultsDiv.style.display = 'none'; return; }
 
@@ -178,37 +159,39 @@
                 matches.forEach(([barkod, info]) => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<div class="font-bold text-gray-800">${info.n}</div><div class="text-[10px] text-gray-400 font-mono">${barkod}</div>`;
-                    div.onclick = () => selectProduct(barkod, info);
+                    div.innerHTML = `<div class="font-bold text-gray-800 text-sm">${info.n}</div><div class="text-[9px] text-gray-400 font-mono">${barkod}</div>`;
+                    div.onclick = () => {
+                        if(screen === 'reg') {
+                            fillRegForm(barkod, info);
+                        } else {
+                            selectReportProduct(barkod, info);
+                        }
+                        resultsDiv.style.display = 'none';
+                    };
                     resultsDiv.appendChild(div);
                 });
                 resultsDiv.style.display = 'block';
-            } else {
-                resultsDiv.style.display = 'none';
+            } else { resultsDiv.style.display = 'none'; }
+        }
+
+        function fillRegForm(barkod, info) {
+            document.getElementById('regBarkod').value = barkod;
+            document.getElementById('regName').value = info.n;
+            document.getElementById('regPrice').value = info.p;
+            if(info.img) {
+                regPhotoBase64 = info.img;
+                document.getElementById('regPreview').src = info.img;
+                document.getElementById('regPreview').classList.remove('hidden');
+                document.getElementById('photoStatus').className = "border-2 border-dashed border-emerald-200 rounded-xl p-4 text-center bg-emerald-50/30";
             }
         }
 
-        function selectProduct(barkod, info) {
+        function selectReportProduct(barkod, info) {
             document.getElementById('reportBarkod').value = barkod;
             document.getElementById('smartSearch').value = info.n;
-            document.getElementById('searchResults').style.display = 'none';
-            loadProductByBarcode();
+            document.getElementById('dispName').innerText = `Ürün: ${info.n}`;
         }
 
-        function loadProductByBarcode() {
-            const b = document.getElementById('reportBarkod').value;
-            const p = db[b];
-            if(p) {
-                document.getElementById('dispName').innerText = `Ürün: ${p.n}`;
-                document.getElementById('dispPrice').innerText = `Fiyat: ${p.p || '0'} ₺`;
-                document.getElementById('smartSearch').value = p.n;
-            } else {
-                document.getElementById('dispName').innerText = "Kayıtlı Ürün Bulunamadı!";
-                document.getElementById('dispPrice').innerText = "Fiyat: ---";
-            }
-        }
-
-        // Görsel Sıkıştırma
         function compressImage(file, callback) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -234,28 +217,36 @@
                     regPhotoBase64 = base64;
                     document.getElementById('regPreview').src = base64;
                     document.getElementById('regPreview').classList.remove('hidden');
+                    document.getElementById('photoStatus').className = "border-2 border-dashed border-emerald-200 rounded-xl p-4 text-center bg-emerald-50/30";
                 });
             }
         };
 
         function saveProduct() {
-            const b = document.getElementById('regBarkod').value;
-            const n = document.getElementById('regName').value;
-            const p = document.getElementById('regPrice').value;
-            if(!b || !n) return alert("Hata: Barkod ve İsim zorunlu!");
+            const b = document.getElementById('regBarkod').value.trim();
+            const n = document.getElementById('regName').value.trim();
+            const p = document.getElementById('regPrice').value.trim();
+            
+            // SIKI DENETİM
+            if(!b || !n || !p || !regPhotoBase64) {
+                alert("❌ DUR! Barkod, İsim, Fiyat ve FOTOĞRAF alanları zorunludur. Lütfen tüm alanları doldur.");
+                return;
+            }
+
             try {
-                db[b] = { n, p, img: regPhotoBase64 || "" };
+                db[b] = { n, p, img: regPhotoBase64 };
                 localStorage.setItem('insert_db', JSON.stringify(db));
-                alert("Ürün Kaydedildi!");
+                alert("✅ Harika! Ürün portföye başarıyla eklendi.");
                 location.reload();
             } catch (e) { alert("Hata: Hafıza dolu!"); }
         }
 
         function updateCounter() {
-            document.getElementById('productCounter').innerText = `Kayıtlı İnsert Portföyü: ${Object.keys(db).length} ÜRÜN`;
+            document.getElementById('productCounter').innerText = `Portföy: ${Object.keys(db).length} ÜRÜN`;
         }
         updateCounter();
 
+        // RAPOR MANTIKLARI
         document.getElementById('reportPhotoInput').onchange = e => {
             if (e.target.files[0]) {
                 compressImage(e.target.files[0], base64 => {
@@ -270,27 +261,24 @@
             const p = db[b];
             const n = parseFloat(document.getElementById('nSales').value) || 0;
             const i = parseFloat(document.getElementById('iSales').value) || 0;
-            const action = document.getElementById('actionType').value;
             const repImg = document.getElementById('reportPreview').src;
 
-            if(!p) return alert("Lütfen ürün seçin!");
+            if(!p || !repImg.startsWith("data")) return alert("Hata: Ürün ve Teşhir Görseli eksik!");
 
             const pcn = n > 0 ? ((i - n) / n * 100).toFixed(0) : "100+";
             document.getElementById('pdf-date-cover').innerText = new Date().toLocaleDateString('tr-TR');
             document.getElementById('pdf-pName').innerText = p.n;
             document.getElementById('pdf-barkod').innerText = `BARKOD: ${b}`;
-            document.getElementById('pdf-pPrice').innerText = `Fiyat: ${p.p || '0'} TL`;
-            document.getElementById('pdf-action').innerText = action;
-            document.getElementById('pdf-prod-image').src = p.img || "";
-            document.getElementById('pdf-report-image').src = repImg.startsWith("data") ? repImg : "";
-            
-            document.getElementById('pdf-ai-text').innerText = `${p.n} ürününde uygulanan ${action} çalışması ile satışlarda %${pcn} büyüme sağlanmıştır. Strateji verimliliği kanıtlanmıştır.`;
+            document.getElementById('pdf-pPrice').innerText = `Normal Fiyat: ${p.p} TL`;
+            document.getElementById('pdf-prod-image').src = p.img;
+            document.getElementById('pdf-report-image').src = repImg;
+            document.getElementById('pdf-ai-text').innerText = `${p.n} ürününde kampanya dönemi boyunca satışlar %${pcn} artış göstermiştir. Yapılan reyon çalışması ve fiyatlandırma verimliliği artırmıştır.`;
 
             const renderArea = document.getElementById('pdf-render-area');
-            const pages = renderArea.querySelectorAll('.pdf-page');
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
 
+            const pages = renderArea.querySelectorAll('.pdf-page');
             for (let j = 0; j < pages.length; j++) {
                 const canvas = await html2canvas(pages[j], { scale: 1.5, useCORS: true });
                 const imgData = canvas.toDataURL('image/jpeg', 0.8);
@@ -309,8 +297,13 @@
                 r.style.display = 'block';
                 html5QrCode = new Html5Qrcode("reader");
                 html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => {
-                    document.getElementById('reportBarkod').value = txt;
-                    loadProductByBarcode();
+                    if(document.getElementById('tab-kayit').classList.contains('hidden')) {
+                        document.getElementById('reportBarkod').value = txt;
+                        if(db[txt]) selectReportProduct(txt, db[txt]);
+                    } else {
+                        document.getElementById('regBarkod').value = txt;
+                        if(db[txt]) fillRegForm(txt, db[txt]);
+                    }
                     html5QrCode.stop().then(() => r.style.display = 'none');
                 });
             }
