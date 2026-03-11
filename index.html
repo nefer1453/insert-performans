@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v5.0</title>
+    <title>İNSERT ELİTE PRO v5.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -20,21 +20,21 @@
         #pdf-render-area { width: 794px; position: absolute; left: -9999px; top: 0; background: white; }
         .pdf-page { width: 794px; height: 1123px; padding: 60px; position: relative; box-sizing: border-box; background: white; }
         .cover-page { background: linear-gradient(135deg, #002d26 0%, #004d40 100%); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        /* Yeni Liste Tasarımı */
-        .pool-card { background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #eee; margin-bottom: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .pool-card { background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #eee; margin-bottom: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); cursor: pointer; }
+        .pool-card:active { transform: scale(0.98); background: #f0fdf4; }
     </style>
 </head>
 <body>
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative text-black">
         <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl">
             <h1 class="text-3xl font-black italic uppercase tracking-tighter">İnsert Elite Pro</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1">Pool Management v5.0</p>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Edit & Pool v5.1</p>
         </div>
 
-        <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50">
+        <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50 text-white">
             <button onclick="showTab('kayit')" id="btn-kayit" class="nav-btn active-tab">📦 Portföy</button>
-            <button onclick="showTab('analiz')" id="btn-analiz" class="nav-btn text-gray-400">📈 Analiz</button>
-            <button onclick="showTab('liste'); loadPoolList();" id="btn-liste" class="nav-btn text-gray-400">📋 Havuz</button>
+            <button onclick="showTab('analiz')" id="btn-analiz" class="nav-btn text-gray-400 text-white">📈 Analiz</button>
+            <button onclick="showTab('liste'); loadPoolList();" id="btn-liste" class="nav-btn text-gray-400 text-white">📋 Havuz</button>
         </div>
 
         <div id="scanner-section" class="px-6 pt-10">
@@ -45,6 +45,8 @@
         </div>
 
         <div id="tab-kayit" class="p-6 space-y-4 pt-4">
+            <div id="editBadge" class="hidden bg-orange-100 text-orange-700 p-2 rounded-xl text-center text-[10px] font-black uppercase">⚠️ ŞU AN DÜZENLEME MODUNDASINIZ</div>
+            
             <div class="bg-white p-5 rounded-[30px] border-2 border-gray-100 space-y-4 shadow-sm">
                 <input type="text" id="regBarkod" placeholder="Barkod *" class="w-full border-b-2 p-2 outline-none font-mono text-xl focus:border-emerald-700">
                 <input type="text" id="regName" placeholder="Ürün Adı *" class="w-full border-b-2 p-2 outline-none font-bold text-lg focus:border-emerald-700 uppercase">
@@ -55,12 +57,12 @@
                 <input type="file" id="prodPhotoInput" accept="image/*" class="hidden">
                 <label for="prodPhotoInput" class="cursor-pointer">
                     <span class="text-3xl block mb-1">📸</span>
-                    <span class="font-black text-gray-400 text-[10px] uppercase">Görsel Havuza Atılacak *</span>
+                    <span id="photoLabel" class="font-black text-gray-400 text-[10px] uppercase">Görsel Havuza Atılacak *</span>
                 </label>
                 <img id="regPreview" class="hidden mt-4 w-full h-44 object-cover rounded-2xl shadow-xl border-4 border-white">
             </div>
 
-            <button onclick="saveProduct()" class="w-full bg-emerald-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest active:scale-95 transition-all text-white">Havuza Kaydet</button>
+            <button onclick="saveProduct()" class="w-full bg-emerald-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest active:scale-95 transition-all">Havuza Kaydet / Güncelle</button>
             
             <div class="pt-6 flex justify-between gap-2">
                 <button onclick="exportBackup()" class="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl text-[10px] font-bold uppercase">💾 Yedeği İndir</button>
@@ -69,7 +71,7 @@
             </div>
         </div>
 
-        <div id="tab-analiz" class="hidden p-6 space-y-6 pt-4 pb-24 text-black">
+        <div id="tab-analiz" class="hidden p-6 space-y-6 pt-4 pb-24">
             <div class="relative">
                 <input type="text" id="smartSearch" onkeyup="filterProducts(this.value, 'rep')" placeholder="Havuzdan Ürün Seç..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-orange-500 font-bold text-sm">
                 <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden"></div>
@@ -101,21 +103,20 @@
                 <img id="reportPreview" class="hidden mt-4 w-full h-44 object-cover rounded-2xl shadow-xl border-4 border-white">
             </div>
 
-            <button onclick="addToReportQueue()" class="w-full bg-gray-800 text-white py-5 rounded-[25px] font-black shadow-xl uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-white"><span>➕</span> Listeye Ekle</button>
+            <button onclick="addToReportQueue()" class="w-full bg-gray-800 text-white py-5 rounded-[25px] font-black shadow-xl uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"><span>➕</span> Listeye Ekle</button>
 
             <div id="reportQueueBar" class="fixed bottom-6 left-6 right-6 yakut-yesili p-4 rounded-[30px] shadow-2xl flex justify-between items-center text-white transform translate-y-32 transition-all duration-500 z-[100] border-2 border-orange-500">
-                <div class="flex flex-col"><span id="queueCount" class="text-xl font-black italic">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 tracking-widest">Analiz Listesi</span></div>
-                <button onclick="finalizeAndPrint()" class="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-90 transition-all italic text-white text-white">Raporu Al 📄</button>
+                <div class="flex flex-col text-white"><span id="queueCount" class="text-xl font-black italic">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 tracking-widest">Analiz Listesi</span></div>
+                <button onclick="finalizeAndPrint()" class="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-90 transition-all italic text-white">Raporu Al 📄</button>
             </div>
         </div>
 
-        <div id="tab-liste" class="hidden p-6 space-y-4 pt-4 pb-24 text-black">
+        <div id="tab-liste" class="hidden p-6 space-y-4 pt-4 pb-24">
             <div class="relative">
-                <input type="text" id="poolSearch" onkeyup="filterPool(this.value)" placeholder="İsmin ilk 3 harfi veya barkod son 4 hane..." class="w-full bg-white border-2 border-emerald-100 p-4 rounded-2xl outline-none focus:border-emerald-600 font-bold text-sm shadow-sm">
-                <span class="absolute right-4 top-4 opacity-30 text-emerald-900 font-bold italic">ARA</span>
+                <input type="text" id="poolSearch" onkeyup="filterPool(this.value)" placeholder="Ara (İsim 3 harf / Barkod son 4)..." class="w-full bg-white border-2 border-emerald-100 p-4 rounded-2xl outline-none focus:border-emerald-600 font-bold text-sm shadow-sm">
             </div>
             
-            <div id="poolContainer" class="space-y-3 overflow-y-auto max-h-[60vh] pr-1">
+            <div id="poolContainer" class="space-y-3 overflow-y-auto max-h-[60vh]">
                 </div>
         </div>
     </div>
@@ -148,29 +149,42 @@
             document.getElementById('btn-analiz').className = `nav-btn ${tab === 'analiz' ? 'active-tab' : 'text-gray-400'}`;
             document.getElementById('btn-liste').className = `nav-btn ${tab === 'liste' ? 'active-tab' : 'text-gray-400'}`;
             
-            // Havuz ekranında barkod tara butonunu gizle (kalabalık yapmasın)
             document.getElementById('scanner-section').style.display = tab === 'liste' ? 'none' : 'block';
+            if(tab !== 'kayit') document.getElementById('editBadge').classList.add('hidden');
         }
 
-        // AKILLI HAVUZ LİSTESİ FİLTRELEME
+        // HAVUZDAN DÜZENLEME MODUNA GEÇİŞ
+        async function editProduct(barkod) {
+            const p = await db.products.get(barkod);
+            if(p) {
+                showTab('kayit');
+                document.getElementById('regBarkod').value = p.barkod;
+                document.getElementById('regName').value = p.n;
+                document.getElementById('regPrice').value = p.p;
+                regPhotoBase64 = p.img;
+                document.getElementById('regPreview').src = p.img;
+                document.getElementById('regPreview').classList.remove('hidden');
+                document.getElementById('editBadge').classList.remove('hidden');
+                window.scrollTo(0,0);
+            }
+        }
+
         async function filterPool(val) {
             const container = document.getElementById('poolContainer');
             container.innerHTML = '';
-            
             let allProducts = await db.products.toArray();
             let filtered = allProducts;
-
             if (val.length >= 3) {
                 filtered = allProducts.filter(p => {
-                    const namePart = p.n.substring(0, 3).toLowerCase(); // İlk 3 harf
-                    const barkodPart = p.barkod.slice(-4); // Son 4 hane
+                    const namePart = p.n.substring(0, 3).toLowerCase();
+                    const barkodPart = p.barkod.slice(-4);
                     return namePart.includes(val.toLowerCase()) || barkodPart.includes(val);
                 });
             }
-
             filtered.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'pool-card';
+                div.onclick = () => editProduct(p.barkod); // Üstüne basınca düzenle
                 div.innerHTML = `
                     <img src="${p.img}" class="w-16 h-16 rounded-xl object-cover border">
                     <div class="flex-1">
@@ -180,7 +194,7 @@
                             <span class="text-xs font-black text-emerald-700">${p.p} ₺</span>
                         </div>
                     </div>
-                    <button onclick="deleteProduct('${p.barkod}')" class="text-red-300 hover:text-red-600 p-2">🗑️</button>
+                    <button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="text-red-300 hover:text-red-600 p-2">🗑️</button>
                 `;
                 container.appendChild(div);
             });
@@ -189,13 +203,13 @@
         async function loadPoolList() { filterPool(''); }
 
         async function deleteProduct(barkod) {
-            if(confirm("Bu ürünü havuzdan silmek istediğine emin misin?")) {
+            if(confirm("Silmek istediğine emin misin?")) {
                 await db.products.delete(barkod);
                 loadPoolList();
             }
         }
 
-        // DİĞER FONKSİYONLAR (BOZULMADAN KORUNDU)
+        // DİĞER FONKSİYONLAR
         async function filterProducts(val, screen) {
             const resultsDiv = document.getElementById('repResults');
             resultsDiv.innerHTML = '';
@@ -221,9 +235,10 @@
 
         async function saveProduct() {
             const b = document.getElementById('regBarkod').value.trim(); const n = document.getElementById('regName').value.trim(); const p = document.getElementById('regPrice').value.trim();
-            if(!b || !n || !p || !regPhotoBase64) return alert("Hata: Tüm alanlar zorunlu!");
+            if(!b || !n || !p || !regPhotoBase64) return alert("Eksik veri!");
             await db.products.put({ barkod: b, n, p, img: regPhotoBase64 });
-            alert("Ürün Havuza Eklendi! ✅");
+            alert("Havuz Güncellendi! ✅");
+            document.getElementById('editBadge').classList.add('hidden');
             location.reload();
         }
 
@@ -231,7 +246,7 @@
             const all = await db.products.toArray();
             const blob = new Blob([JSON.stringify(all)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `Havuz_Yedek_${new Date().toLocaleDateString()}.json`;
+            const a = document.createElement('a'); a.href = url; a.download = `Havuz_Yedek.json`;
             a.click();
         }
 
@@ -239,8 +254,7 @@
             const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = async (ev) => {
-                const data = JSON.parse(ev.target.result);
-                await db.products.bulkPut(data);
+                await db.products.bulkPut(JSON.parse(ev.target.result));
                 alert("Yedek Yüklendi!"); location.reload();
             };
             reader.readAsText(file);
@@ -264,7 +278,7 @@
         function addToReportQueue() {
             const b = document.getElementById('reportBarkod').value; const n = parseFloat(document.getElementById('nSales').value) || 0; const i = parseFloat(document.getElementById('iSales').value) || 0; const action = document.getElementById('actionType').value; const repImg = document.getElementById('reportPreview').src;
             db.products.get(b).then(p => {
-                if(!p || !repImg.startsWith("data")) return alert("Hata: Ürün ve Teşhir Görseli eksik!");
+                if(!p || !repImg.startsWith("data")) return alert("Eksik veri!");
                 reportQueue.push({ barkod: b, info: p, normal: n, insert: i, action: action, img: repImg });
                 document.getElementById('queueCount').innerText = `${reportQueue.length} Ürün`;
                 document.getElementById('reportQueueBar').style.transform = "translateY(0)";
@@ -300,9 +314,11 @@
                 html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => {
                     beep.play();
                     if(!document.getElementById('tab-kayit').classList.contains('hidden')) {
-                        document.getElementById('regBarkod').value = txt; db.products.get(txt).then(p => { if(p) fillRegForm(txt, p); });
+                        document.getElementById('regBarkod').value = txt; 
+                        db.products.get(txt).then(p => { if(p) fillRegForm(txt, p); });
                     } else {
-                        document.getElementById('reportBarkod').value = txt; db.products.get(txt).then(p => { if(p) { document.getElementById('smartSearch').value = p.n; document.getElementById('dispName').innerText = p.n; document.getElementById('dispPrice').innerText = `Normal Fiyat: ${p.p} ₺`; } });
+                        document.getElementById('reportBarkod').value = txt;
+                        db.products.get(txt).then(p => { if(p) { document.getElementById('smartSearch').value = p.n; document.getElementById('dispName').innerText = p.n; document.getElementById('dispPrice').innerText = `Normal Fiyat: ${p.p} ₺`; } });
                     }
                     html5QrCode.stop().then(() => r.style.display = 'none');
                 });
@@ -317,7 +333,6 @@
             document.getElementById('regPreview').classList.remove('hidden');
         }
         document.getElementById('reportPhotoInput').onchange = e => { if (e.target.files[0]) compressImage(e.target.files[0], b => { document.getElementById('reportPreview').src = b; document.getElementById('reportPreview').classList.remove('hidden'); }); };
-        db.products.count().then(c => document.getElementById('productCounter').innerText = `Havuzdaki Ürün: ${c}`);
     </script>
 </body>
 </html>
