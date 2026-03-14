@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v5.5</title>
+    <title>İNSERT ELİTE PRO v5.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -20,15 +20,22 @@
         #pdf-render-area { width: 794px; position: absolute; left: -9999px; top: 0; background: white; }
         .pdf-page { width: 794px; height: 1123px; padding: 60px; position: relative; box-sizing: border-box; background: white; }
         .cover-page { background: linear-gradient(135deg, #002d26 0%, #004d40 100%); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .pool-card { background: white; border-radius: 24px; padding: 15px; border: 1px solid #eee; margin-bottom: 15px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .pool-card:active { transform: scale(0.98); }
+        .pool-card { background: white; border-radius: 24px; padding: 15px; border: 1px solid #eee; margin-bottom: 15px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        /* Ön İzleme Katmanı */
+        #previewModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        #previewModal img { max-width: 100%; max-height: 90vh; border-radius: 15px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
+    <div id="previewModal" onclick="closePreview()">
+        <img id="modalImg" src="">
+        <div class="absolute top-6 right-6 text-white text-4xl font-black">&times;</div>
+    </div>
+
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative text-black">
         <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl">
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">İnsert Elite Pro</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Visual Pool v5.5</p>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white text-white">Full Preview v5.6</p>
         </div>
 
         <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50 text-white">
@@ -43,7 +50,7 @@
         </div>
 
         <div id="tab-kayit" class="p-6 space-y-4 pt-4">
-            <div id="editBadge" class="hidden bg-orange-100 text-orange-700 p-2 rounded-xl text-center text-[10px] font-black uppercase">⚠️ DÜZENLEME MODU AKTİF</div>
+            <div id="editBadge" class="hidden bg-orange-100 text-orange-700 p-2 rounded-xl text-center text-[10px] font-black uppercase tracking-widest italic">⚠️ Düzenleme Modu Aktif</div>
             <div class="bg-white p-5 rounded-[30px] border-2 border-gray-100 space-y-4 shadow-sm">
                 <input type="text" id="regBarkod" placeholder="Barkod *" class="w-full border-b-2 p-2 outline-none font-mono text-xl focus:border-emerald-700">
                 <input type="text" id="regName" placeholder="Ürün Adı *" class="w-full border-b-2 p-2 outline-none font-bold text-lg focus:border-emerald-700 uppercase">
@@ -52,26 +59,26 @@
             
             <div class="grid grid-cols-2 gap-3">
                 <div class="border-2 border-dashed border-gray-200 rounded-2xl p-4 text-center bg-gray-50 flex flex-col items-center justify-center min-h-[140px]">
-                    <input type="file" id="prodPhotoInput" accept="image/*" class="hidden">
+                    <input type="file" id="prodPhotoInput" accept="image/*" class="hidden" onchange="compress(this.files[0], 'reg')">
                     <label for="prodPhotoInput" class="cursor-pointer">
                         <span class="text-2xl mb-1 block">🖼️</span>
                         <span class="text-[9px] font-black text-gray-400 uppercase leading-tight">Ürün<br>Görseli</span>
                     </label>
-                    <img id="regPreview" class="hidden mt-2 w-full h-20 object-cover rounded-lg border-2 border-white">
+                    <img id="regPreview" class="hidden mt-2 w-full h-20 object-cover rounded-lg border-2 border-white shadow-sm" onclick="openPreview(this.src, event)">
                 </div>
                 <div class="border-2 border-dashed border-orange-200 rounded-2xl p-4 text-center bg-orange-50 flex flex-col items-center justify-center min-h-[140px]">
-                    <input type="file" id="preTesirInput" accept="image/*" class="hidden">
+                    <input type="file" id="preTesirInput" accept="image/*" class="hidden" onchange="compress(this.files[0], 'pre')">
                     <label for="preTesirInput" class="cursor-pointer">
                         <span class="text-2xl mb-1 block">📸</span>
                         <span class="text-[9px] font-black text-orange-400 uppercase leading-tight">Teşhir<br>Görseli</span>
                     </label>
-                    <img id="prePreview" class="hidden mt-2 w-full h-20 object-cover rounded-lg border-2 border-white">
+                    <img id="prePreview" class="hidden mt-2 w-full h-20 object-cover rounded-lg border-2 border-white shadow-sm" onclick="openPreview(this.src, event)">
                 </div>
             </div>
-            <button onclick="saveProduct()" class="w-full bg-emerald-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest active:scale-95 transition-all text-white text-white">Havuza Kaydet / Güncelle</button>
+            <button onclick="saveProduct()" class="w-full bg-emerald-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest active:scale-95 transition-all">Havuza Kaydet / Güncelle</button>
             <div class="pt-6 flex justify-between gap-2">
-                <button onclick="exportBackup()" class="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl text-[10px] font-bold uppercase">💾 Yedeği İndir</button>
-                <button onclick="document.getElementById('importFile').click()" class="flex-1 bg-purple-50 text-purple-600 p-3 rounded-xl text-[10px] font-bold uppercase">📥 Yedeği Yükle</button>
+                <button onclick="exportBackup()" class="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl text-[10px] font-bold uppercase tracking-tighter">💾 Yedeği İndir</button>
+                <button onclick="document.getElementById('importFile').click()" class="flex-1 bg-purple-50 text-purple-600 p-3 rounded-xl text-[10px] font-bold uppercase tracking-tighter">📥 Yedeği Yükle</button>
                 <input type="file" id="importFile" class="hidden" onchange="importBackup(event)">
             </div>
         </div>
@@ -81,24 +88,24 @@
             <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden"></div>
             <div class="bg-gray-900 p-6 rounded-[35px] shadow-2xl border-r-[12px] border-orange-600 relative overflow-hidden text-white">
                 <input type="hidden" id="reportBarkod">
-                <p id="dispName" class="text-white font-black text-2xl uppercase italic tracking-tighter leading-tight text-white text-white">Ürün Seçiniz</p>
-                <p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-2 tracking-widest text-white text-white">Normal: 0.00 ₺</p>
+                <p id="dispName" class="text-white font-black text-2xl uppercase italic tracking-tighter leading-tight">Ürün Seçiniz</p>
+                <p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-2 tracking-widest">Normal: 0.00 ₺</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <input type="number" id="nSales" placeholder="Normal Satış" class="border-2 border-gray-100 p-5 rounded-3xl text-center font-black text-2xl bg-white outline-none">
                 <input type="number" id="iSales" placeholder="İnsert Satış" class="border-2 border-orange-200 p-5 rounded-3xl text-center font-black text-2xl bg-orange-50 text-orange-700 outline-none">
             </div>
             <div class="border-4 border-dashed border-gray-100 rounded-[30px] p-6 text-center bg-white relative">
-                <input type="file" id="reportPhotoInput" accept="image/*" class="hidden">
+                <input type="file" id="reportPhotoInput" accept="image/*" class="hidden" onchange="compress(this.files[0], 'repImg')">
                 <label for="reportPhotoInput" class="cursor-pointer">
                     <span id="repLabel" class="text-[10px] font-black text-gray-400 uppercase italic">📸 Güncel Teşhir Görseli</span>
                 </label>
-                <img id="reportPreview" class="hidden mt-4 w-full h-44 object-cover rounded-2xl shadow-xl border-4 border-white">
+                <img id="reportPreview" class="hidden mt-4 w-full h-44 object-cover rounded-2xl shadow-xl border-4 border-white" onclick="openPreview(this.src, event)">
             </div>
-            <button onclick="addToReportQueue()" class="w-full bg-gray-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest active:scale-95 transition-all text-white text-white"><span>➕</span> Listeye Ekle</button>
+            <button onclick="addToReportQueue()" class="w-full bg-gray-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest active:scale-95 transition-all text-white"><span>➕</span> Listeye Ekle</button>
             <div id="reportQueueBar" class="fixed bottom-6 left-6 right-6 yakut-yesili p-4 rounded-[30px] shadow-2xl flex justify-between items-center text-white transform translate-y-32 transition-all duration-500 z-[100] border-2 border-orange-500">
-                <div class="flex flex-col text-white"><span id="queueCount" class="text-xl font-black italic">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 tracking-widest">Analiz Listesi</span></div>
-                <button onclick="finalizeAndPrint()" class="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-90 transition-all italic text-white text-white">Raporu Al 📄</button>
+                <div class="flex flex-col text-white"><span id="queueCount" class="text-xl font-black italic text-white">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 tracking-widest text-white">Analiz Listesi</span></div>
+                <button onclick="finalizeAndPrint()" class="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-90 transition-all italic text-white">Raporu Al 📄</button>
             </div>
         </div>
 
@@ -127,6 +134,16 @@
         db.version(2).stores({ products: "barkod, n, p" });
         let reportQueue = []; let regPhotoBase64 = ""; let preTesirBase64 = ""; let html5QrCode; const beep = new Audio('https://www.soundjay.com/buttons/beep-07.mp3');
 
+        // ÖN İZLEME FONKSİYONLARI
+        function openPreview(src, e) {
+            e.stopPropagation();
+            document.getElementById('modalImg').src = src;
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
         function showTab(tab) {
             document.getElementById('tab-kayit').classList.toggle('hidden', tab !== 'kayit');
             document.getElementById('tab-analiz').classList.toggle('hidden', tab !== 'analiz');
@@ -141,12 +158,10 @@
             const container = document.getElementById('poolContainer'); container.innerHTML = '';
             let all = await db.products.toArray();
             let filtered = val.length >= 3 ? all.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)) : all;
-            
             filtered.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'pool-card';
                 div.onclick = (e) => { if(!e.target.closest('button')) editProduct(p.barkod); };
-                
                 div.innerHTML = `
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex-1">
@@ -156,17 +171,17 @@
                         <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-black">${p.p} ₺</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-2">
-                        <div class="relative">
+                        <div class="relative group">
                             <span class="absolute top-1 left-1 bg-black/50 text-white text-[7px] px-1 rounded font-bold uppercase z-10">Ürün</span>
-                            <img src="${p.img}" class="w-full h-24 object-cover rounded-xl border">
+                            <img src="${p.img}" class="w-full h-24 object-cover rounded-xl border" onclick="openPreview(this.src, event)">
                         </div>
-                        <div class="relative">
+                        <div class="relative group">
                             <span class="absolute top-1 left-1 bg-orange-600/70 text-white text-[7px] px-1 rounded font-bold uppercase z-10">Teşhir</span>
-                            ${p.preImg ? `<img src="${p.preImg}" class="w-full h-24 object-cover rounded-xl border border-orange-100">` : `<div class="w-full h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-[8px] text-gray-300 font-bold uppercase italic">Foto Yok</div>`}
+                            ${p.preImg ? `<img src="${p.preImg}" class="w-full h-24 object-cover rounded-xl border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="w-full h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-[8px] text-gray-300 font-bold uppercase italic">Foto Yok</div>`}
                         </div>
                     </div>
                     <div class="flex justify-end mt-3 border-t pt-2">
-                        <button onclick="deleteProduct('${p.barkod}')" class="flex items-center gap-1 text-red-500 font-bold text-[10px] uppercase"> Sil 🗑️</button>
+                        <button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="flex items-center gap-1 text-red-500 font-bold text-[10px] uppercase"> Sil 🗑️</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -208,7 +223,8 @@
             alert("Havuz Güncellendi! ✅"); location.reload();
         }
 
-        function compress(file, cb) {
+        function compress(file, type) {
+            if(!file) return;
             const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = e => {
                 const img = new Image(); img.src = e.target.result;
@@ -216,14 +232,13 @@
                     const canvas = document.createElement('canvas'); const MAX = 500;
                     const scale = MAX / img.width; canvas.width = MAX; canvas.height = img.height * scale;
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    cb(canvas.toDataURL('image/jpeg', 0.6));
+                    const b64 = canvas.toDataURL('image/jpeg', 0.6);
+                    if(type === 'reg') { regPhotoBase64 = b64; document.getElementById('regPreview').src = b64; document.getElementById('regPreview').classList.remove('hidden'); }
+                    if(type === 'pre') { preTesirBase64 = b64; document.getElementById('prePreview').src = b64; document.getElementById('prePreview').classList.remove('hidden'); }
+                    if(type === 'repImg') { document.getElementById('reportPreview').src = b64; document.getElementById('reportPreview').classList.remove('hidden'); }
                 };
             };
         }
-
-        document.getElementById('prodPhotoInput').onchange = e => compress(e.target.files[0], b => { regPhotoBase64 = b; document.getElementById('regPreview').src = b; document.getElementById('regPreview').classList.remove('hidden'); });
-        document.getElementById('preTesirInput').onchange = e => compress(e.target.files[0], b => { preTesirBase64 = b; document.getElementById('prePreview').src = b; document.getElementById('prePreview').classList.remove('hidden'); });
-        document.getElementById('reportPhotoInput').onchange = e => compress(e.target.files[0], b => { document.getElementById('reportPreview').src = b; document.getElementById('reportPreview').classList.remove('hidden'); });
 
         async function filterProducts(val, screen) {
             const resDiv = document.getElementById('repResults'); resDiv.innerHTML = '';
