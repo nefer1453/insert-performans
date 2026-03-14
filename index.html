@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v5.7</title>
+    <title>İNSERT ELİTE PRO v5.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -11,15 +11,18 @@
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f4f7f6; color: #1a1a1a; scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; color: #1a1a1a; }
         .yakut-yesili { background-color: #004d40; }
         .nav-btn { flex: 1; padding: 16px; font-weight: 800; text-transform: uppercase; font-size: 0.6rem; transition: 0.3s; }
-        .active-tab { background: white; color: #E67E22; border-bottom: 4px solid #E67E22; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
+        .active-tab { background: white; color: #E67E22; border-bottom: 4px solid #E67E22; }
         #reader { width: 100%; border-radius: 20px; overflow: hidden; display: none; border: 4px solid #004d40; }
-        .pool-card { background: white; border-radius: 20px; padding: 12px; border: 1px solid #eee; margin-bottom: 12px; cursor: pointer; }
         #previewModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; }
-        .turbo-input { transition: all 0.2s; border-bottom: 2px solid #e2e8f0; }
-        .turbo-input:focus { border-bottom: 2px solid #004d40; transform: translateY(-2px); }
+        
+        /* PDF Tasarım Ayarları */
+        #pdf-render-area { width: 794px; position: absolute; left: -9999px; top: 0; background: white; }
+        .pdf-page { width: 794px; height: 1123px; padding: 50px; position: relative; box-sizing: border-box; background: white; display: flex; flex-direction: column; }
+        .cover-page { background: #004d40; color: white; justify-content: center; align-items: center; text-align: center; }
+        .data-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
     </style>
 </head>
 <body>
@@ -28,7 +31,7 @@
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative">
         <div class="yakut-yesili p-6 text-white text-center rounded-b-[35px] shadow-xl">
             <h1 class="text-2xl font-black italic uppercase tracking-tighter">İnsert Elite Pro</h1>
-            <p class="text-[9px] opacity-60 uppercase font-bold tracking-[3px]">Turbo Smart v5.7</p>
+            <p class="text-[9px] opacity-60 uppercase font-bold tracking-[3px]">Elite Designer v5.8</p>
         </div>
 
         <div class="flex bg-gray-50 mx-4 -mt-5 rounded-xl shadow-md overflow-hidden z-50">
@@ -45,9 +48,9 @@
         <div id="tab-kayit" class="p-6 space-y-4">
             <div id="editBadge" class="hidden bg-orange-50 text-orange-600 p-2 rounded-lg text-center text-[9px] font-black uppercase italic border border-orange-100">Düzenleme Modu</div>
             <div class="space-y-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-                <input type="text" id="regBarkod" placeholder="Barkod No" class="w-full turbo-input bg-transparent p-2 outline-none font-mono text-lg">
-                <input type="text" id="regName" placeholder="Ürün İsmi" class="w-full turbo-input bg-transparent p-2 outline-none font-bold uppercase">
-                <input type="text" id="regPrice" placeholder="Fiyat (₺)" class="w-full turbo-input bg-transparent p-2 outline-none font-black text-emerald-700">
+                <input type="text" id="regBarkod" placeholder="Barkod No" class="w-full bg-transparent border-b-2 p-2 outline-none font-mono text-lg">
+                <input type="text" id="regName" placeholder="Ürün İsmi" class="w-full bg-transparent border-b-2 p-2 outline-none font-bold uppercase">
+                <input type="text" id="regPrice" placeholder="Fiyat (₺)" class="w-full bg-transparent border-b-2 p-2 outline-none font-black text-emerald-700">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="border-2 border-dashed border-gray-200 rounded-xl p-3 text-center bg-white min-h-[120px] flex flex-col items-center justify-center" onclick="document.getElementById('prodPhotoInput').click()">
@@ -64,60 +67,47 @@
                 </div>
             </div>
             <button onclick="saveProduct()" class="w-full bg-emerald-700 text-white py-4 rounded-xl font-black shadow-lg uppercase text-sm tracking-wider active:scale-95 transition-all">Sisteme Kaydet</button>
-            <div class="flex gap-2">
-                <button onclick="exportBackup()" class="flex-1 bg-gray-100 p-3 rounded-lg text-[9px] font-bold uppercase flex items-center justify-center gap-1 text-gray-600">💾 Yedekle</button>
-                <button onclick="document.getElementById('importFile').click()" class="flex-1 bg-gray-100 p-3 rounded-lg text-[9px] font-bold uppercase flex items-center justify-center gap-1 text-gray-600">📥 Geri Yükle</button>
-                <input type="file" id="importFile" accept=".json" class="hidden" onchange="importBackup(event)">
-            </div>
         </div>
 
-        <div id="tab-analiz" class="hidden p-6 space-y-4">
-            <div class="relative">
-                <input type="text" id="smartSearch" onkeyup="filterProducts(this.value)" placeholder="Ürün Ara..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold text-sm shadow-sm">
-                <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
-            </div>
+        <div id="tab-analiz" class="hidden p-6 space-y-4 pb-24 text-black">
+            <input type="text" id="smartSearch" onkeyup="filterProducts(this.value)" placeholder="Ürün Ara..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-xl outline-none focus:border-orange-500 font-bold text-sm shadow-sm text-black">
+            <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
             <div class="bg-slate-900 p-5 rounded-3xl shadow-lg border-r-[10px] border-orange-500 text-white">
                 <input type="hidden" id="reportBarkod">
-                <p id="dispName" class="font-black text-xl uppercase italic tracking-tight leading-tight">Ürün Seçiniz</p>
-                <p id="dispPrice" class="text-orange-400 font-bold text-[10px] mt-1 uppercase">Fiyat Bekleniyor...</p>
+                <p id="dispName" class="font-black text-xl uppercase italic tracking-tight leading-tight text-white">Ürün Seçiniz</p>
+                <p id="dispPrice" class="text-orange-400 font-bold text-[10px] mt-1 uppercase text-white">Fiyat Bekleniyor...</p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <label class="text-[9px] font-black text-gray-400 uppercase ml-2">Normal Satış</label>
-                    <input type="number" id="nSales" class="w-full border-2 p-4 rounded-xl text-center font-black text-xl bg-white shadow-inner outline-none">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[9px] font-black text-orange-400 uppercase ml-2">İnsert Satış</label>
-                    <input type="number" id="iSales" class="w-full border-2 border-orange-100 p-4 rounded-xl text-center font-black text-xl bg-orange-50 text-orange-700 shadow-inner outline-none">
-                </div>
+            <div class="grid grid-cols-2 gap-3 text-black">
+                <input type="number" id="nSales" placeholder="Normal Satış" class="w-full border-2 p-4 rounded-xl text-center font-black text-xl bg-white shadow-inner outline-none text-black">
+                <input type="number" id="iSales" placeholder="İnsert Satış" class="w-full border-2 border-orange-100 p-4 rounded-xl text-center font-black text-xl bg-orange-50 text-orange-700 shadow-inner outline-none">
             </div>
             <div class="border-2 border-dashed border-gray-100 rounded-2xl p-4 text-center bg-white" onclick="document.getElementById('reportPhotoInput').click()">
                 <input type="file" id="reportPhotoInput" accept="image/*" class="hidden" onchange="compress(this.files[0], 'repImg')">
                 <span id="repLabel" class="text-[9px] font-black text-gray-400 uppercase">📸 Güncel Teşhir Fotoğrafı</span>
                 <img id="reportPreview" class="hidden mt-2 w-full h-32 object-cover rounded-lg shadow-md" onclick="openPreview(this.src, event)">
             </div>
-            <button onclick="addToQueue()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-black shadow-lg uppercase italic tracking-widest text-sm">➕ Listeye Ekle</button>
-            <div id="queueBar" class="fixed bottom-4 left-4 right-4 yakut-yesili p-4 rounded-2xl shadow-2xl flex justify-between items-center text-white transform translate-y-32 transition-all z-[100] border-2 border-orange-500">
-                <div class="flex flex-col"><span id="qCount" class="text-lg font-black italic">0 Ürün</span><span class="text-[8px] font-bold uppercase opacity-70">Rapor Hazırlanıyor</span></div>
+            <button onclick="addToQueue()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-black shadow-lg uppercase italic tracking-widest text-sm text-white">➕ Listeye Ekle</button>
+            <div id="queueBar" class="fixed bottom-4 left-4 right-4 yakut-yesili p-4 rounded-2xl shadow-2xl flex justify-between items-center text-white transform translate-y-32 transition-all z-[100] border-2 border-orange-500 text-white">
+                <div class="flex flex-col text-white"><span id="qCount" class="text-lg font-black italic text-white">0 Ürün</span><span class="text-[8px] font-bold uppercase opacity-70 text-white">Hazırlanıyor</span></div>
                 <button onclick="finalizeAndPrint()" class="bg-orange-600 px-4 py-2 rounded-lg font-black uppercase text-[10px] shadow-lg text-white">PDF ÇIKART 📄</button>
             </div>
         </div>
 
-        <div id="tab-liste" class="hidden p-6 space-y-4 pb-24">
-            <input type="text" id="poolSearch" onkeyup="filterPool(this.value)" placeholder="Barkod son 4 veya isim 3 harf..." class="w-full bg-white border-2 border-emerald-50 p-4 rounded-xl outline-none font-bold text-xs shadow-sm focus:border-emerald-600">
-            <div id="poolContainer" class="space-y-4"></div>
+        <div id="tab-liste" class="hidden p-6 space-y-4 pb-24 text-black">
+            <input type="text" id="poolSearch" onkeyup="filterPool(this.value)" placeholder="Barkod veya isim..." class="w-full bg-white border-2 border-emerald-50 p-4 rounded-xl outline-none font-bold text-xs shadow-sm focus:border-emerald-600 text-black">
+            <div id="poolContainer" class="space-y-4 text-black text-black"></div>
         </div>
     </div>
 
     <div id="pdf-render-area">
         <div id="pdf-cover" class="pdf-page cover-page">
-            <div style="border: 12px solid #E67E22; padding: 50px; width: 80%;">
-                <h1 style="font-size: 55px; font-weight: 900; letter-spacing: -2px; margin: 0; line-height: 1.1; color: white;">İNSERT<br>PERFORMANS<br>RAPORU</h1>
-                <div style="height: 6px; background: #E67E22; width: 100px; margin: 30px 0;"></div>
+            <div style="border: 15px solid #E67E22; padding: 60px; width: 85%; box-sizing: border-box;">
+                <h1 style="font-size: 50px; font-weight: 900; color: white; margin: 0; line-height: 1.1; text-transform: uppercase;">İNSERT<br>PERFORMANS<br>RAPORU</h1>
             </div>
-            <div style="position: absolute; bottom: 100px; text-align: center; width: 100%;">
-                <p id="pdf-date-cover" style="font-size: 24px; font-weight: 700; color: white;"></p>
-                <p style="text-transform: uppercase; letter-spacing: 6px; color: #E67E22; font-weight: 900; font-size: 12px;">ŞUBE: SOĞANLIK 2</p>
+            <div style="margin-top: 50px; text-align: center; width: 100%;">
+                <p id="pdf-date-cover" style="font-size: 28px; font-weight: 700; color: white;"></p>
+                <div style="height: 2px; background: rgba(255,255,255,0.3); width: 200px; margin: 20px auto;"></div>
+                <p style="text-transform: uppercase; letter-spacing: 8px; color: #E67E22; font-weight: 900; font-size: 14px;">ŞUBE: SOĞANLIK 2</p>
             </div>
         </div>
         <div id="pdf-pages-container"></div>
@@ -142,7 +132,7 @@
             let filtered = val.length >= 3 ? all.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)) : all;
             filtered.forEach(p => {
                 const div = document.createElement('div'); div.className = 'pool-card'; div.onclick = (e) => { if(!e.target.closest('button')) editProduct(p.barkod); };
-                div.innerHTML = `<div class="flex justify-between items-start mb-2"><div class="flex-1"><h4 class="font-black text-xs uppercase italic">${p.n}</h4><p class="text-[8px] text-gray-400 font-mono">${p.barkod}</p></div><span class="text-xs font-black text-emerald-700">${p.p} ₺</span></div><div class="grid grid-cols-2 gap-2"><img src="${p.img}" class="h-20 w-full object-cover rounded-lg border" onclick="openPreview(this.src, event)">${p.preImg ? `<img src="${p.preImg}" class="h-20 w-full object-cover rounded-lg border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="h-20 bg-gray-50 rounded-lg border-2 border-dashed flex items-center justify-center text-[7px] text-gray-300 font-bold uppercase">Foto Yok</div>`}</div><div class="flex justify-end mt-2"><button onclick="deleteProduct('${p.barkod}')" class="text-red-500 font-bold text-[9px] uppercase">🗑️ Sil</button></div>`;
+                div.innerHTML = `<div class="flex justify-between items-start mb-2"><div class="flex-1"><h4 class="font-black text-xs uppercase italic">${p.n}</h4><p class="text-[8px] text-gray-400 font-mono">${p.barkod}</p></div><span class="text-xs font-black text-emerald-700">${p.p} ₺</span></div><div class="grid grid-cols-2 gap-2"><img src="${p.img}" class="h-20 w-full object-cover rounded-lg border" onclick="openPreview(this.src, event)">${p.preImg ? `<img src="${p.preImg}" class="h-20 w-full object-cover rounded-lg border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="h-20 bg-gray-50 rounded-lg border-2 border-dashed flex items-center justify-center text-[7px] text-gray-300 font-bold uppercase">Foto Yok</div>`}</div><div class="flex justify-end mt-2"><button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="text-red-500 font-bold text-[9px] uppercase">🗑️ Sil</button></div>`;
                 container.appendChild(div);
             });
         }
@@ -158,9 +148,9 @@
 
         async function saveProduct() {
             const b = document.getElementById('regBarkod').value.trim(); const n = document.getElementById('regName').value.trim(); const p = document.getElementById('regPrice').value.trim();
-            if(!b || !n || !p || !regB64) return alert("Hata: Ürün bilgileri ve fotoğrafı zorunlu!");
+            if(!b || !n || !p || !regB64) return alert("Eksik veri!");
             await db.products.put({ barkod: b, n, p, img: regB64, preImg: preB64 });
-            alert("Ürün Kaydedildi!"); location.reload();
+            alert("Kaydedildi!"); location.reload();
         }
 
         async function deleteProduct(barkod) { if(confirm("Silinsin mi?")) { await db.products.delete(barkod); loadPoolList(); } }
@@ -182,35 +172,13 @@
             };
         }
 
-        async function exportBackup() {
-            const all = await db.products.toArray();
-            const blob = new Blob([JSON.stringify(all)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `Soganlik2_Yedek_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-        }
-
-        async function importBackup(e) {
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    await db.products.bulkPut(data);
-                    alert("Yedek başarıyla yüklendi! " + data.length + " ürün aktarıldı.");
-                    location.reload();
-                } catch(e) { alert("Hata: Geçersiz yedek dosyası!"); }
-            };
-            reader.readAsText(file);
-        }
-
         async function filterProducts(val) {
             const res = document.getElementById('repResults'); res.innerHTML = '';
             if (val.length < 1) { res.classList.add('hidden'); return; }
             const matches = await db.products.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)).toArray();
             if (matches.length > 0) {
                 matches.forEach(p => {
-                    const div = document.createElement('div'); div.className = 'p-3 border-b text-xs font-bold uppercase hover:bg-orange-50 cursor-pointer'; div.innerText = p.n;
+                    const div = document.createElement('div'); div.className = 'p-3 border-b text-xs font-bold uppercase hover:bg-orange-50 cursor-pointer text-black'; div.innerText = p.n;
                     div.onclick = () => {
                         document.getElementById('reportBarkod').value = p.barkod; document.getElementById('smartSearch').value = p.n;
                         document.getElementById('dispName').innerText = p.n; document.getElementById('dispPrice').innerText = `Normal Fiyat: ${p.p} ₺`;
@@ -225,20 +193,15 @@
         }
 
         function addToQueue() {
-            const b = document.getElementById('reportBarkod').value;
-            const n = parseFloat(document.getElementById('nSales').value) || 0;
-            const i = parseFloat(document.getElementById('iSales').value) || 0;
-            const img = document.getElementById('reportPreview').src;
+            const b = document.getElementById('reportBarkod').value; const n = parseFloat(document.getElementById('nSales').value) || 0; const i = parseFloat(document.getElementById('iSales').value) || 0; const img = document.getElementById('reportPreview').src;
             db.products.get(b).then(p => {
-                if(!p || !img.startsWith("data")) return alert("Hata: Ürün ve Teşhir Fotoğrafı zorunlu!");
+                if(!p || !img.startsWith("data")) return alert("Eksik veri!");
                 reportQueue.push({ barkod: b, info: p, normal: n, insert: i, img });
                 document.getElementById('qCount').innerText = `${reportQueue.length} Ürün`;
                 document.getElementById('queueBar').style.transform = "translateY(0)";
-                // TURBO AKIŞ: Hemen yeni okuma için temizle
                 document.getElementById('smartSearch').value = ''; document.getElementById('nSales').value = ''; document.getElementById('iSales').value = '';
                 document.getElementById('reportPreview').classList.add('hidden'); document.getElementById('repLabel').classList.remove('hidden');
                 document.getElementById('dispName').innerText = "Sıradaki Ürün?"; beep.play();
-                // Otomatik olarak kamerayı aç (isteğe bağlı hız için)
                 setTimeout(toggleScanner, 500);
             });
         }
@@ -247,16 +210,51 @@
             const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
             const container = document.getElementById('pdf-pages-container');
             document.getElementById('pdf-date-cover').innerText = new Date().toLocaleDateString('tr-TR');
-            const coverCanvas = await html2canvas(document.getElementById('pdf-cover'), { scale: 1.5 });
+            const coverCanvas = await html2canvas(document.getElementById('pdf-cover'), { scale: 1.5, useCORS: true });
             pdf.addImage(coverCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
+
             for (let item of reportQueue) {
                 const pcn = item.normal > 0 ? ((item.insert - item.normal) / item.normal * 100).toFixed(0) : "100+";
-                const pageHTML = `<div class="pdf-page"><div style="display: flex; gap: 40px; height: 100%;"><div style="flex: 1.1; display: flex; flex-direction: column;"><div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 40px; padding: 35px; flex-grow: 1;"><div style="height: 600px; background: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #eee;"><img src="${item.info.img}" style="max-width: 95%; max-height: 95%; object-fit: contain;"></div><div style="margin-top: 40px;"><h2 style="font-size: 38px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase;">${item.info.n}</h2><div style="height: 6px; background: #E67E22; width: 70px; margin: 20px 0;"></div><p style="font-size: 16px; color: #64748b; font-weight: 800;">SKU: ${item.barkod}</p><p style="font-size: 22px; color: #004d40; font-weight: 900; margin-top: 10px;">Fiyat: ${item.info.p} TL</p></div></div></div><div style="flex: 0.9; display: flex; flex-direction: column; gap: 20px;"><div style="background: #004d40; color: white; border-radius: 30px; padding: 25px; text-align: center;"><p style="font-size: 10px; opacity: 0.6; text-transform: uppercase;">STRATEJİ</p><h2 style="font-size: 20px; font-weight: 900;">İNSERT UYGULAMASI</h2></div><div style="position: relative; height: 350px;"><img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 30px;"><div style="position: absolute; top: 20px; right: 20px; background: #E67E22; color: white; padding: 10px 20px; border-radius: 15px; font-weight: 900; font-size: 24px;">%${pcn}</div></div><div style="background: #f0fdf4; border: 4px solid #dcfce7; border-radius: 35px; padding: 30px; flex-grow: 1;"><h4 style="color: #004d40; font-weight: 900; font-size: 11px; letter-spacing: 2px;">PERFORMANS ANALİZİ</h4><p style="font-size: 18px; color: #064e3b; font-weight: 700; font-style: italic; line-height: 1.4;">${item.info.n} ürününde %${pcn} büyüme ile kampanya başarısı tescillenmiştir.</p></div></div></div></div>`;
+                const pageHTML = `<div class="pdf-page">
+                    <div style="display: flex; gap: 40px; height: 100%;">
+                        <div style="flex: 1.1; display: flex; flex-direction: column;">
+                            <div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 40px; padding: 35px; flex-grow: 1; display: flex; flex-direction: column;">
+                                <div style="height: 550px; background: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #eee;">
+                                    <img src="${item.info.img}" style="max-width: 95%; max-height: 95%; object-fit: contain;">
+                                </div>
+                                <div style="margin-top: 30px;">
+                                    <h2 style="font-size: 34px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase;">${item.info.n}</h2>
+                                    <div style="height: 6px; background: #E67E22; width: 70px; margin: 15px 0;"></div>
+                                    <div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0;">
+                                        <div class="data-row"><span>SKU (Barkod)</span><span style="font-weight: 900;">${item.barkod}</span></div>
+                                        <div class="data-row"><span>Birim Fiyat</span><span style="font-weight: 900; color:#004d40;">${item.info.p} TL</span></div>
+                                        <div class="data-row"><span>Normal Dönem Satış</span><span style="font-weight: 900;">${item.normal} Adet</span></div>
+                                        <div class="data-row"><span>İnsert Dönemi Satış</span><span style="font-weight: 900; color:#E67E22;">${item.insert} Adet</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="flex: 0.9; display: flex; flex-direction: column; gap: 20px;">
+                            <div style="background: #004d40; color: white; border-radius: 30px; padding: 25px; text-align: center;">
+                                <p style="font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 2px;">STRATEJİ</p>
+                                <h2 style="font-size: 20px; font-weight: 900;">İNSERT UYGULAMASI</h2>
+                            </div>
+                            <div style="position: relative; height: 380px;">
+                                <img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 30px;">
+                                <div style="position: absolute; top: 20px; right: 20px; background: #E67E22; color: white; padding: 12px 24px; border-radius: 15px; font-weight: 900; font-size: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">%${pcn}</div>
+                            </div>
+                            <div style="background: #f0fdf4; border: 4px solid #dcfce7; border-radius: 35px; padding: 30px; flex-grow: 1;">
+                                <h4 style="color: #004d40; font-weight: 900; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">PERFORMANS ANALİZİ</h4>
+                                <p style="font-size: 19px; color: #064e3b; font-weight: 700; font-style: italic; line-height: 1.4; margin-top: 15px;">${item.info.n} ürününde elde edilen %${pcn} büyüme oranı, uygulanan teşhir stratejisinin başarısını kanıtlamaktadır.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
                 container.innerHTML = pageHTML;
-                const pageCanvas = await html2canvas(container.firstElementChild, { scale: 1.5 });
+                const pageCanvas = await html2canvas(container.firstElementChild, { scale: 1.5, useCORS: true });
                 pdf.addPage(); pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
             }
-            pdf.save(`İNSERT_ELİTE_FINAL_RAPORU.pdf`); location.reload();
+            pdf.save(`ELITE_REPORT_v5.8_FINAL.pdf`); location.reload();
         }
 
         function toggleScanner() {
