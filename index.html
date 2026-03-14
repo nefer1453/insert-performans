@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v6.1</title>
+    <title>İNSERT ELİTE PRO v6.1.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -42,7 +42,7 @@
         <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl relative">
             <div class="absolute top-6 right-6 text-2xl cursor-pointer opacity-80 hover:opacity-100 transition-all" onclick="document.getElementById('settingsModal').classList.remove('hidden')">⚙️</div>
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">İnsert Elite Pro</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Omni Import v6.1</p>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Quick Dropdown v6.1.1</p>
         </div>
 
         <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50">
@@ -58,7 +58,7 @@
         
         <div id="tab-kayit" class="p-6 space-y-4 pt-4">
             <div class="relative">
-                <input type="text" id="regSearch" onkeyup="filterProducts(this.value, 'reg')" placeholder="Ürün Bul..." class="w-full bg-white border-2 border-emerald-100 p-4 rounded-2xl outline-none focus:border-emerald-600 font-bold text-sm shadow-sm text-black">
+                <input type="text" id="regSearch" onfocus="filterProducts(this.value, 'reg')" onkeyup="filterProducts(this.value, 'reg')" placeholder="Ürün Bul..." class="w-full bg-white border-2 border-emerald-100 p-4 rounded-2xl outline-none focus:border-emerald-600 font-bold text-sm shadow-sm text-black">
                 <div id="regResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
             </div>
             <div id="editBadge" class="hidden bg-orange-50 text-orange-600 p-2 rounded-lg text-center text-[9px] font-black uppercase italic border border-orange-100">Düzenleme Modu</div>
@@ -89,7 +89,7 @@
 
         <div id="tab-analiz" class="hidden p-6 space-y-5 pt-4 pb-24 text-black">
             <div class="relative">
-                <input type="text" id="smartSearch" onkeyup="filterProducts(this.value, 'rep')" placeholder="Havuzdan Ürün Seç..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-xl outline-none font-bold text-black shadow-sm">
+                <input type="text" id="smartSearch" onfocus="filterProducts(this.value, 'rep')" onkeyup="filterProducts(this.value, 'rep')" placeholder="Havuzdan Ürün Seç..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-xl outline-none font-bold text-black shadow-sm">
                 <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
             </div>
             <div class="bg-gray-900 p-6 rounded-[35px] shadow-2xl border-r-[12px] border-orange-600 text-white">
@@ -147,6 +147,16 @@
         db.version(2).stores({ products: "barkod, n, p" });
         let reportQueue = []; let regB64 = ""; let preB64 = ""; let html5QrCode; const beep = new Audio('https://www.soundjay.com/buttons/beep-07.mp3');
 
+        // Ekranda boş bir yere tıklayınca açılır menüleri kapatan zeka
+        document.addEventListener('click', function(e) {
+            if (e.target.id !== 'smartSearch' && !e.target.closest('#repResults')) {
+                document.getElementById('repResults')?.classList.add('hidden');
+            }
+            if (e.target.id !== 'regSearch' && !e.target.closest('#regResults')) {
+                document.getElementById('regResults')?.classList.add('hidden');
+            }
+        });
+
         function openPreview(src, e) { e.stopPropagation(); document.getElementById('modalImg').src = src; document.getElementById('previewModal').style.display = 'flex'; }
         function showTab(tab) {
             ['kayit','analiz','liste'].forEach(t => document.getElementById('tab-'+t).classList.add('hidden'));
@@ -155,7 +165,6 @@
             document.getElementById('scanner-section').style.display = tab === 'liste' ? 'none' : 'block';
         }
 
-        // V6.1 - OMNI IMPORT (AKILLI EXCEL MOTORU)
         function importExcel(e) {
             const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
@@ -197,6 +206,7 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // GÜNCELLENEN ARAMA FONKSİYONU: Kutucuk boşsa bile listeyi getirir
         async function filterProducts(val, target) {
             let resDiv;
             if (target === 'reg') resDiv = document.getElementById('regResults');
@@ -204,13 +214,23 @@
             else { loadPoolList(val); return; }
 
             resDiv.innerHTML = '';
-            if (val.length < 1) { resDiv.classList.add('hidden'); return; }
-            const matches = await db.products.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)).toArray();
+            
+            let matches = [];
+            if (val.length < 1) {
+                // Kutuya tıklandı ama bir şey yazılmadıysa tüm ürünleri göster
+                matches = await db.products.toArray();
+            } else {
+                // Harf girildiyse filtrele
+                matches = await db.products.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)).toArray();
+            }
             
             if (matches.length > 0) {
                 matches.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'p-3 border-b font-bold text-sm cursor-pointer hover:bg-orange-50 text-black'; div.innerText = p.n;
+                    // Liste tasarımını daha ferah ve okunabilir yaptım
+                    div.className = 'p-4 border-b font-bold text-sm cursor-pointer hover:bg-orange-50 text-black flex justify-between items-center'; 
+                    div.innerHTML = `<span>${p.n}</span> <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full whitespace-nowrap">${p.p} ₺</span>`;
+                    
                     div.onclick = () => {
                         if (target === 'reg') editProduct(p.barkod);
                         else {
@@ -226,6 +246,8 @@
                     resDiv.appendChild(div);
                 });
                 resDiv.classList.remove('hidden');
+            } else {
+                resDiv.classList.add('hidden');
             }
         }
 
@@ -341,7 +363,7 @@
                 const pageCanvas = await html2canvas(container.firstElementChild, { scale: 1.5 });
                 pdf.addPage(); pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
             }
-            pdf.save(`ELITE_REPORT_v6.1.pdf`); location.reload();
+            pdf.save(`ELITE_REPORT_v6.1.1.pdf`); location.reload();
         }
 
         async function exportBackup() {
