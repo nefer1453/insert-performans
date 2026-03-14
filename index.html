@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v5.8.3</title>
+    <title>İNSERT ELİTE PRO v6.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -24,16 +25,32 @@
 </head>
 <body>
     <div id="previewModal" onclick="this.style.display='none'"><img id="modalImg" class="max-w-[95%] max-h-[90vh] rounded-lg shadow-2xl"></div>
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative text-black">
-        <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl">
-            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">İnsert Elite Pro</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Elite v5.8.3 - Full Action</p>
+
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center p-6" onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-white rounded-[30px] p-6 w-full max-w-sm relative shadow-2xl">
+            <button onclick="document.getElementById('settingsModal').classList.add('hidden')" class="absolute top-4 right-5 text-gray-400 text-3xl font-black">&times;</button>
+            <h3 class="font-black text-xl text-emerald-900 mb-5 uppercase italic">⚙️ Sistem Ayarları</h3>
+            <div class="bg-emerald-50 border-2 border-dashed border-emerald-200 p-5 rounded-2xl text-center">
+                <p class="text-[11px] font-black text-emerald-800 uppercase mb-3">🚀 Excel'den Liste Aktar</p>
+                <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden" onchange="importExcel(event)">
+                <button onclick="document.getElementById('excelInput').click()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold text-xs uppercase shadow-md active:scale-95 transition-all">Dosyayı Seç</button>
+            </div>
         </div>
+    </div>
+
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative text-black">
+        <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl relative">
+            <div class="absolute top-6 right-6 text-2xl cursor-pointer opacity-80 hover:opacity-100 transition-all" onclick="document.getElementById('settingsModal').classList.remove('hidden')">⚙️</div>
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">İnsert Elite Pro</h1>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Executive v6.0</p>
+        </div>
+
         <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50">
             <button onclick="showTab('kayit')" id="btn-kayit" class="nav-btn active-tab">📦 Portföy</button>
             <button onclick="showTab('analiz')" id="btn-analiz" class="nav-btn text-gray-400">📈 Analiz</button>
             <button onclick="showTab('liste'); loadPoolList();" id="btn-liste" class="nav-btn text-gray-400">📋 Havuz</button>
         </div>
+
         <div id="scanner-section" class="px-6 pt-10">
             <div id="reader"></div>
             <button onclick="toggleScanner()" class="w-full yakut-yesili text-white p-5 rounded-2xl font-black shadow-xl uppercase italic flex items-center justify-center gap-3">📷 Barkodu Tara</button>
@@ -78,18 +95,10 @@
             <div class="bg-gray-900 p-6 rounded-[35px] shadow-2xl border-r-[12px] border-orange-600 text-white">
                 <input type="hidden" id="reportBarkod"><p id="dispName" class="font-black text-2xl uppercase italic tracking-tighter leading-tight text-white">Ürün Seçiniz</p><p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-2 text-white">Fiyat Bekleniyor...</p>
             </div>
-            
             <div class="grid grid-cols-2 gap-4">
-                <div class="flex flex-col">
-                    <label class="text-[10px] font-black text-gray-400 uppercase ml-4 mb-1">Normal Satış</label>
-                    <input type="number" id="nSales" placeholder="Adet" class="border-2 p-5 rounded-3xl text-center font-black text-2xl text-black shadow-inner">
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-[10px] font-black text-orange-400 uppercase ml-4 mb-1">İnsert Satış</label>
-                    <input type="number" id="iSales" placeholder="Adet" class="border-2 border-orange-200 p-5 rounded-3xl text-center font-black text-2xl bg-orange-50 text-orange-700 shadow-inner">
-                </div>
+                <div class="flex flex-col"><label class="text-[10px] font-black text-gray-400 uppercase ml-4 mb-1">Normal Satış</label><input type="number" id="nSales" placeholder="Adet" class="border-2 p-5 rounded-3xl text-center font-black text-2xl text-black shadow-inner"></div>
+                <div class="flex flex-col"><label class="text-[10px] font-black text-orange-400 uppercase ml-4 mb-1">İnsert Satış</label><input type="number" id="iSales" placeholder="Adet" class="border-2 border-orange-200 p-5 rounded-3xl text-center font-black text-2xl bg-orange-50 text-orange-700 shadow-inner"></div>
             </div>
-
             <div class="flex flex-col">
                 <label class="text-[10px] font-black text-gray-400 uppercase ml-4 mb-1">Uygulama Stratejisi</label>
                 <select id="actionType" class="w-full bg-white border-2 border-gray-100 p-4 rounded-2xl outline-none font-bold text-sm text-black shadow-sm">
@@ -99,13 +108,11 @@
                     <option value="Raf Ön Yüz Genişletme">Raf Ön Yüz Genişletme</option>
                 </select>
             </div>
-
             <div class="border-4 border-dashed border-gray-100 rounded-[30px] p-6 text-center bg-white relative" onclick="document.getElementById('reportPhotoInput').click()">
                 <input type="file" id="reportPhotoInput" accept="image/*" class="hidden" onchange="compress(this.files[0], 'repImg')">
-                <span id="repLabel" class="text-[10px] font-black text-gray-400 uppercase italic text-black">📸 Teşhir Görselini Çek / Seç</span>
+                <span id="repLabel" class="text-[10px] font-black text-gray-400 uppercase italic text-black">📸 Teşhir Görseli</span>
                 <img id="reportPreview" class="hidden mt-4 w-full h-44 object-cover rounded-2xl shadow-xl" onclick="openPreview(this.src, event)">
             </div>
-
             <button onclick="addToQueue()" class="w-full bg-gray-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest text-white">➕ Listeye Ekle</button>
             <div id="queueBar" class="fixed bottom-6 left-6 right-6 yakut-yesili p-4 rounded-[30px] shadow-2xl flex justify-between items-center text-white transform translate-y-32 transition-all z-[100] border-2 border-orange-500 text-white">
                 <div class="flex flex-col text-white"><span id="qCount" class="text-xl font-black italic text-white">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 text-white">Analiz Hazır</span></div>
@@ -145,6 +152,29 @@
             document.getElementById('scanner-section').style.display = tab === 'liste' ? 'none' : 'block';
         }
 
+        // GİZLİ EXCEL YÜKLEME FONKSİYONU
+        function importExcel(e) {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                let count = 0;
+                for (let r of jsonData) {
+                    const name = r["Ürün Adı"] || r["İSİM"] || r["AD"] || r["Açıklama"];
+                    const barkod = String(r["Barkod"] || r["BARKOD"] || r["NO"]);
+                    const eskiFiyat = r["Eski Fiyat"] || r["ESKİ FİYAT"] || r["NORMAL"];
+                    if(barkod && name) {
+                        await db.products.put({ barkod, n: name, p: String(eskiFiyat || ""), img: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" });
+                        count++;
+                    }
+                }
+                alert(count + " Ürün Havuza Aktarıldı! ✅"); location.reload();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         async function filterProducts(val, target) {
             let resDiv;
             if (target === 'reg') resDiv = document.getElementById('regResults');
@@ -158,8 +188,7 @@
             if (matches.length > 0) {
                 matches.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'p-3 border-b font-bold text-sm cursor-pointer hover:bg-orange-50 text-black';
-                    div.innerText = p.n;
+                    div.className = 'p-3 border-b font-bold text-sm cursor-pointer hover:bg-orange-50 text-black'; div.innerText = p.n;
                     div.onclick = () => {
                         if (target === 'reg') editProduct(p.barkod);
                         else {
@@ -177,13 +206,23 @@
             }
         }
 
+        // AKILLI HAVUZ: EKLENEN ÜRÜNLERİ YEŞİLE BOYAMA
         async function loadPoolList(val = '') {
             const container = document.getElementById('poolContainer'); container.innerHTML = '';
             let all = await db.products.toArray();
             let filtered = val.length >= 3 ? all.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)) : all;
+            
             filtered.forEach(p => {
-                const div = document.createElement('div'); div.className = 'pool-card rounded-3xl p-4 bg-white border border-gray-100 shadow-sm'; div.onclick = (e) => { if(!e.target.closest('button')) editProduct(p.barkod); };
-                div.innerHTML = `<div class="flex justify-between items-start mb-2"><div class="flex-1 text-black"><h4 class="font-black text-xs uppercase italic">${p.n}</h4><p class="text-[8px] text-gray-400 font-mono">${p.barkod}</p></div><span class="text-xs font-black text-emerald-700">${p.p} ₺</span></div><div class="grid grid-cols-2 gap-2"><img src="${p.img}" class="h-20 w-full object-cover rounded-lg border" onclick="openPreview(this.src, event)">${p.preImg ? `<img src="${p.preImg}" class="h-20 w-full object-cover rounded-lg border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="h-20 bg-gray-50 rounded-lg border-2 border-dashed flex items-center justify-center text-[7px] text-gray-300 font-bold italic text-black">Foto Yok</div>`}</div><div class="flex justify-end mt-2"><button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="text-red-500 font-bold text-[9px] uppercase">🗑️ Sil</button></div>`;
+                const isDone = reportQueue.some(r => r.barkod === p.barkod);
+                const bgClass = isDone ? "bg-emerald-50 border-emerald-300" : "bg-white border-gray-100";
+                const badgeHTML = isDone ? `<div class="absolute -top-3 -right-2 bg-emerald-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded-full shadow-md z-10 border-2 border-white">✅ Raporlandı</div>` : '';
+
+                const div = document.createElement('div'); 
+                div.className = `pool-card rounded-3xl p-4 border shadow-sm relative transition-all ${bgClass}`; 
+                div.onclick = (e) => { if(!e.target.closest('button')) editProduct(p.barkod); };
+                
+                div.innerHTML = `${badgeHTML}
+                <div class="flex justify-between items-start mb-2"><div class="flex-1 text-black"><h4 class="font-black text-xs uppercase italic pr-8">${p.n}</h4><p class="text-[8px] text-gray-400 font-mono">${p.barkod}</p></div><span class="text-xs font-black text-emerald-700">${p.p} ₺</span></div><div class="grid grid-cols-2 gap-2"><img src="${p.img}" class="h-20 w-full object-cover rounded-lg border" onclick="openPreview(this.src, event)">${p.preImg ? `<img src="${p.preImg}" class="h-20 w-full object-cover rounded-lg border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="h-20 bg-white/50 rounded-lg border-2 border-dashed flex items-center justify-center text-[7px] text-gray-400 font-bold italic text-black">Foto Yok</div>`}</div><div class="flex justify-end mt-2"><button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="text-red-500 font-bold text-[9px] uppercase">🗑️ Sil</button></div>`;
                 container.appendChild(div);
             });
         }
@@ -237,9 +276,12 @@
                 reportQueue.push({ barkod: b, info: p, normal: n, insert: i, action: action, img: img });
                 document.getElementById('qCount').innerText = `${reportQueue.length} Ürün`;
                 document.getElementById('queueBar').style.transform = "translateY(0)";
+                
+                // Formu temizle ve havuzu güncelle (yeşil tik için)
                 document.getElementById('smartSearch').value = ''; document.getElementById('nSales').value = ''; document.getElementById('iSales').value = '';
                 document.getElementById('reportPreview').classList.add('hidden'); document.getElementById('repLabel').classList.remove('hidden');
                 document.getElementById('dispName').innerText = "Sıradaki?"; beep.play();
+                loadPoolList(); // Havuzu güncelle
                 setTimeout(toggleScanner, 500);
             });
         }
@@ -248,8 +290,29 @@
             const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
             const container = document.getElementById('pdf-pages-container');
             document.getElementById('pdf-date-cover').innerText = new Date().toLocaleDateString('tr-TR');
+            
+            // 1. Kapak Sayfası
             const coverCanvas = await html2canvas(document.getElementById('pdf-cover'), { scale: 1.5 });
             pdf.addImage(coverCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
+
+            // 2. YÖNETİCİ ÖZETİ (Yeni Özellik)
+            if(reportQueue.length > 0) {
+                // Maksimum ilk 25 ürünü listele (sayfa taşmasını önlemek için)
+                let topItems = reportQueue.slice(0, 25);
+                let trs = topItems.map(item => {
+                    let pcn = item.normal > 0 ? ((item.insert - item.normal) / item.normal * 100).toFixed(0) : "100+";
+                    return `<tr><td style="padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-weight: 700; color: #1a1a1a;">${item.info.n.substring(0, 30)}</td><td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.normal}</td><td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; color: #E67E22; font-weight: 900;">${item.insert}</td><td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: 900; color: #004d40;">%${pcn}</td></tr>`;
+                }).join('');
+                
+                let summaryHTML = `<div class="pdf-page"><div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 40px; padding: 40px; height: 100%; display: flex; flex-direction: column;"><div style="text-align: center; margin-bottom: 30px;"><h2 style="font-size: 32px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase; letter-spacing: 2px;">GENEL PERFORMANS ÖZETİ</h2><p style="font-size: 12px; color: #64748b; margin-top: 5px;">(Raporlanan İlk ${topItems.length} Ürün)</p><div style="height: 4px; background: #E67E22; width: 60px; margin: 15px auto;"></div></div><div style="flex-grow: 1; background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; overflow: hidden;"><table style="width: 100%; border-collapse: collapse; font-size: 14px;"><thead style="background: #004d40; color: white; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;"><tr><th style="padding: 15px; text-align: left; border-top-left-radius: 10px;">Ürün Adı</th><th style="padding: 15px; text-align: center;">Normal Satış</th><th style="padding: 15px; text-align: center;">İnsert Satış</th><th style="padding: 15px; text-align: right; border-top-right-radius: 10px;">Büyüme</th></tr></thead><tbody>${trs}</tbody></table></div></div></div>`;
+                
+                container.innerHTML = summaryHTML;
+                const summaryCanvas = await html2canvas(container.firstElementChild, { scale: 1.5 });
+                pdf.addPage();
+                pdf.addImage(summaryCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
+            }
+
+            // 3. Detay Sayfaları (Orijinal Tasarım Korumalı)
             for (let item of reportQueue) {
                 const pcn = item.normal > 0 ? ((item.insert - item.normal) / item.normal * 100).toFixed(0) : "100+";
                 const pageHTML = `<div class="pdf-page"><div style="display: flex; gap: 40px; height: 100%;"><div style="flex: 1.1; display: flex; flex-direction: column;"><div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 40px; padding: 35px; flex-grow: 1;"><div style="height: 550px; background: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #eee;"><img src="${item.info.img}" style="max-width: 95%; max-height: 95%; object-fit: contain;"></div><div style="margin-top: 30px;"><h2 style="font-size: 34px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase;">${item.info.n}</h2><div style="height: 6px; background: #E67E22; width: 70px; margin: 15px 0;"></div><div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0;"><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0;"><span>SKU</span><span style="font-weight:900;">${item.barkod}</span></div><div style="display:flex; justify-content:space-between; padding:8px 0;"><span>Birim Fiyat</span><span style="font-weight:900; color:#004d40;">${item.info.p} TL</span></div></div></div></div></div><div style="flex: 0.9; display: flex; flex-direction: column; gap: 20px;"><div style="background: #004d40; color: white; border-radius: 30px; padding: 25px; text-align: center;"><p style="font-size: 10px; opacity: 0.6; text-transform: uppercase;">STRATEJİ</p><h2 style="font-size: 20px; font-weight: 900;">${item.action}</h2></div><div style="position: relative; height: 380px;"><img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 30px;"><div style="position: absolute; top: 20px; right: 20px; background: #E67E22; color: white; padding: 12px 24px; border-radius: 15px; font-weight: 900; font-size: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">%${pcn}</div></div><div style="background: #f0fdf4; border: 4px solid #dcfce7; border-radius: 35px; padding: 30px; flex-grow: 1;"><h4 style="color: #004d40; font-weight: 900; font-size: 11px; letter-spacing: 2px;">PERFORMANS ANALİZİ</h4><p style="font-size: 19px; color: #064e3b; font-weight: 700; font-style: italic; line-height: 1.4; margin-top: 15px;">${item.info.n} ürününde %${pcn} büyüme ile başarı kanıtlanmıştır.</p></div></div></div></div>`;
@@ -257,7 +320,20 @@
                 const pageCanvas = await html2canvas(container.firstElementChild, { scale: 1.5 });
                 pdf.addPage(); pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
             }
-            pdf.save(`ELITE_REPORT_v5.8.3.pdf`); location.reload();
+            pdf.save(`ELITE_REPORT_v6.0.pdf`); location.reload();
+        }
+
+        async function exportBackup() {
+            const all = await db.products.toArray();
+            const blob = new Blob([JSON.stringify(all)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `Soganlik2_Yedek.json`; a.click();
+        }
+
+        async function importBackup(e) {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader(); reader.onload = async (ev) => { await db.products.bulkPut(JSON.parse(ev.target.result)); alert("Yüklendi!"); location.reload(); };
+            reader.readAsText(file);
         }
 
         function toggleScanner() {
