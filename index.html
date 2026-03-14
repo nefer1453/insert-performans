@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v5.8 - RECOVERY</title>
+    <title>İNSERT ELİTE PRO v5.8.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -27,7 +27,7 @@
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative text-black">
         <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl">
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">İnsert Elite Pro</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Elite v5.8 - Stable</p>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Elite v5.8.1 - Search Fix</p>
         </div>
         <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50">
             <button onclick="showTab('kayit')" id="btn-kayit" class="nav-btn active-tab">📦 Portföy</button>
@@ -38,7 +38,15 @@
             <div id="reader"></div>
             <button onclick="toggleScanner()" class="w-full yakut-yesili text-white p-5 rounded-2xl font-black shadow-xl uppercase italic flex items-center justify-center gap-3">📷 Barkodu Tara</button>
         </div>
+        
         <div id="tab-kayit" class="p-6 space-y-4 pt-4">
+            <div class="relative">
+                <input type="text" id="regSearch" onkeyup="filterProducts(this.value, 'reg')" placeholder="Hızlı Bul (İsim veya Barkod)..." class="w-full bg-white border-2 border-emerald-100 p-4 rounded-2xl outline-none focus:border-emerald-600 font-bold text-sm shadow-sm text-black">
+                <div id="regResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
+            </div>
+
+            <div id="editBadge" class="hidden bg-orange-50 text-orange-600 p-2 rounded-lg text-center text-[9px] font-black uppercase italic border border-orange-100">Düzenleme Modu</div>
+            
             <div class="bg-white p-5 rounded-[30px] border-2 border-gray-100 space-y-4 shadow-sm">
                 <input type="text" id="regBarkod" placeholder="Barkod *" class="w-full border-b-2 p-2 outline-none font-mono text-xl focus:border-emerald-700 text-black">
                 <input type="text" id="regName" placeholder="Ürün Adı *" class="w-full border-b-2 p-2 outline-none font-bold text-lg focus:border-emerald-700 uppercase text-black">
@@ -63,9 +71,10 @@
                 <input type="file" id="importFile" accept=".json" class="hidden" onchange="importBackup(event)">
             </div>
         </div>
-        <div id="tab-analiz" class="hidden p-6 space-y-5 pt-4 pb-24">
-            <input type="text" id="smartSearch" onkeyup="filterProducts(this.value)" placeholder="Ürün Ara..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-xl outline-none font-bold text-black">
-            <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden text-black"></div>
+
+        <div id="tab-analiz" class="hidden p-6 space-y-5 pt-4 pb-24 text-black">
+            <input type="text" id="smartSearch" onkeyup="filterProducts(this.value, 'rep')" placeholder="Ürün Ara..." class="w-full bg-white border-2 border-gray-100 p-4 rounded-xl outline-none font-bold text-black shadow-sm">
+            <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
             <div class="bg-gray-900 p-6 rounded-[35px] shadow-2xl border-r-[12px] border-orange-600 text-white">
                 <input type="hidden" id="reportBarkod"><p id="dispName" class="font-black text-2xl uppercase italic tracking-tighter leading-tight text-white">Ürün Seçiniz</p><p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-2 text-white">Fiyat Bekleniyor...</p>
             </div>
@@ -80,15 +89,17 @@
             </div>
             <button onclick="addToQueue()" class="w-full bg-gray-800 text-white py-5 rounded-[25px] font-black shadow-2xl uppercase tracking-widest text-white">➕ Listeye Ekle</button>
             <div id="queueBar" class="fixed bottom-6 left-6 right-6 yakut-yesili p-4 rounded-[30px] shadow-2xl flex justify-between items-center text-white transform translate-y-32 transition-all z-[100] border-2 border-orange-500">
-                <div class="flex flex-col text-white"><span id="qCount" class="text-xl font-black italic text-white">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 text-white text-white">Analiz Hazır</span></div>
+                <div class="flex flex-col text-white"><span id="qCount" class="text-xl font-black italic text-white">0 Ürün</span><span class="text-[10px] font-bold uppercase opacity-70 text-white text-white text-white">Analiz Hazır</span></div>
                 <button onclick="finalizeAndPrint()" class="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg text-white">PDF AL 📄</button>
             </div>
         </div>
+
         <div id="tab-liste" class="hidden p-6 space-y-4 pt-4 pb-24 text-black">
-            <input type="text" id="poolSearch" onkeyup="filterPool(this.value)" placeholder="Barkod veya isim..." class="w-full bg-white border-2 border-emerald-50 p-4 rounded-xl outline-none font-bold text-black">
+            <input type="text" id="poolSearch" onkeyup="filterProducts(this.value, 'pool')" placeholder="Barkod veya isim..." class="w-full bg-white border-2 border-emerald-50 p-4 rounded-xl outline-none font-bold text-black shadow-sm">
             <div id="poolContainer" class="space-y-4"></div>
         </div>
     </div>
+
     <div id="pdf-render-area">
         <div id="pdf-cover" class="pdf-page cover-page">
             <div style="border: 15px solid #E67E22; padding: 60px; width: 85%; box-sizing: border-box;">
@@ -101,6 +112,7 @@
         </div>
         <div id="pdf-pages-container"></div>
     </div>
+
     <script>
         const db = new Dexie("InsertEliteDB");
         db.version(2).stores({ products: "barkod, n, p" });
@@ -114,21 +126,56 @@
             document.getElementById('scanner-section').style.display = tab === 'liste' ? 'none' : 'block';
         }
 
-        async function filterPool(val) {
+        async function filterProducts(val, target) {
+            let resDiv;
+            if (target === 'reg') resDiv = document.getElementById('regResults');
+            else if (target === 'rep') resDiv = document.getElementById('repResults');
+            else { loadPoolList(val); return; }
+
+            resDiv.innerHTML = '';
+            if (val.length < 1) { resDiv.classList.add('hidden'); return; }
+            const matches = await db.products.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)).toArray();
+            
+            if (matches.length > 0) {
+                matches.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 border-b font-bold text-sm cursor-pointer hover:bg-orange-50 text-black';
+                    div.innerText = p.n;
+                    div.onclick = () => {
+                        if (target === 'reg') editProduct(p.barkod);
+                        else {
+                            document.getElementById('reportBarkod').value = p.barkod;
+                            document.getElementById('smartSearch').value = p.n;
+                            document.getElementById('dispName').innerText = p.n;
+                            document.getElementById('dispPrice').innerText = `Normal: ${p.p} ₺`;
+                            if(p.preImg) { document.getElementById('reportPreview').src = p.preImg; document.getElementById('reportPreview').classList.remove('hidden'); document.getElementById('repLabel').classList.add('hidden'); }
+                        }
+                        resDiv.classList.add('hidden');
+                    };
+                    resDiv.appendChild(div);
+                });
+                resDiv.classList.remove('hidden');
+            }
+        }
+
+        async function loadPoolList(val = '') {
             const container = document.getElementById('poolContainer'); container.innerHTML = '';
             let all = await db.products.toArray();
             let filtered = val.length >= 3 ? all.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)) : all;
             filtered.forEach(p => {
                 const div = document.createElement('div'); div.className = 'pool-card rounded-3xl p-4 bg-white border border-gray-100 shadow-sm'; div.onclick = (e) => { if(!e.target.closest('button')) editProduct(p.barkod); };
-                div.innerHTML = `<div class="flex justify-between items-start mb-2"><div class="flex-1"><h4 class="font-black text-xs uppercase italic">${p.n}</h4><p class="text-[8px] text-gray-400 font-mono">${p.barkod}</p></div><span class="text-xs font-black text-emerald-700">${p.p} ₺</span></div><div class="grid grid-cols-2 gap-2"><img src="${p.img}" class="h-20 w-full object-cover rounded-lg border" onclick="openPreview(this.src, event)">${p.preImg ? `<img src="${p.preImg}" class="h-20 w-full object-cover rounded-lg border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="h-20 bg-gray-50 rounded-lg border-2 border-dashed flex items-center justify-center text-[7px] text-gray-300 font-bold italic text-black">Foto Yok</div>`}</div><div class="flex justify-end mt-2"><button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="text-red-500 font-bold text-[9px] uppercase">🗑️ Sil</button></div>`;
+                div.innerHTML = `<div class="flex justify-between items-start mb-2"><div class="flex-1 text-black"><h4 class="font-black text-xs uppercase italic">${p.n}</h4><p class="text-[8px] text-gray-400 font-mono">${p.barkod}</p></div><span class="text-xs font-black text-emerald-700">${p.p} ₺</span></div><div class="grid grid-cols-2 gap-2"><img src="${p.img}" class="h-20 w-full object-cover rounded-lg border" onclick="openPreview(this.src, event)">${p.preImg ? `<img src="${p.preImg}" class="h-20 w-full object-cover rounded-lg border border-orange-100" onclick="openPreview(this.src, event)">` : `<div class="h-20 bg-gray-50 rounded-lg border-2 border-dashed flex items-center justify-center text-[7px] text-gray-300 font-bold italic text-black">Foto Yok</div>`}</div><div class="flex justify-end mt-2"><button onclick="event.stopPropagation(); deleteProduct('${p.barkod}')" class="text-red-500 font-bold text-[9px] uppercase">🗑️ Sil</button></div>`;
                 container.appendChild(div);
             });
         }
-        async function loadPoolList() { filterPool(''); }
 
         async function editProduct(barkod) {
             const p = await db.products.get(barkod); if(!p) return;
-            showTab('kayit'); document.getElementById('regBarkod').value = p.barkod; document.getElementById('regName').value = p.n; document.getElementById('regPrice').value = p.p;
+            showTab('kayit'); 
+            document.getElementById('regSearch').value = p.n;
+            document.getElementById('regBarkod').value = p.barkod; 
+            document.getElementById('regName').value = p.n; 
+            document.getElementById('regPrice').value = p.p;
             regB64 = p.img; document.getElementById('regPreview').src = p.img; document.getElementById('regPreview').classList.remove('hidden');
             if(p.preImg) { preB64 = p.preImg; document.getElementById('prePreview').src = p.preImg; document.getElementById('prePreview').classList.remove('hidden'); }
             document.getElementById('editBadge').classList.remove('hidden');
@@ -160,27 +207,6 @@
             };
         }
 
-        async function filterProducts(val) {
-            const res = document.getElementById('repResults'); res.innerHTML = '';
-            if (val.length < 1) { res.classList.add('hidden'); return; }
-            const matches = await db.products.filter(p => p.n.toLowerCase().includes(val.toLowerCase()) || p.barkod.includes(val)).toArray();
-            if (matches.length > 0) {
-                matches.forEach(p => {
-                    const div = document.createElement('div'); div.className = 'p-3 border-b font-bold text-sm cursor-pointer hover:bg-orange-50 text-black'; div.innerText = p.n;
-                    div.onclick = () => {
-                        document.getElementById('reportBarkod').value = p.barkod;
-                        document.getElementById('smartSearch').value = p.n;
-                        document.getElementById('dispName').innerText = p.n;
-                        document.getElementById('dispPrice').innerText = `Normal: ${p.p} ₺`;
-                        if(p.preImg) { document.getElementById('reportPreview').src = p.preImg; document.getElementById('reportPreview').classList.remove('hidden'); document.getElementById('repLabel').classList.add('hidden'); }
-                        res.classList.add('hidden');
-                    };
-                    res.appendChild(div);
-                });
-                res.classList.remove('hidden');
-            }
-        }
-
         function addToQueue() {
             const b = document.getElementById('reportBarkod').value; const n = parseFloat(document.getElementById('nSales').value) || 0; const i = parseFloat(document.getElementById('iSales').value) || 0; const img = document.getElementById('reportPreview').src;
             db.products.get(b).then(p => {
@@ -208,7 +234,7 @@
                 const pageCanvas = await html2canvas(container.firstElementChild, { scale: 1.5 });
                 pdf.addPage(); pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
             }
-            pdf.save(`ELITE_REPORT_STABLE.pdf`); location.reload();
+            pdf.save(`ELITE_REPORT_v5.8.1.pdf`); location.reload();
         }
 
         async function exportBackup() {
