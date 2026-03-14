@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNSERT ELİTE PRO v6.0</title>
+    <title>İNSERT ELİTE PRO v6.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -31,7 +31,7 @@
             <button onclick="document.getElementById('settingsModal').classList.add('hidden')" class="absolute top-4 right-5 text-gray-400 text-3xl font-black">&times;</button>
             <h3 class="font-black text-xl text-emerald-900 mb-5 uppercase italic">⚙️ Sistem Ayarları</h3>
             <div class="bg-emerald-50 border-2 border-dashed border-emerald-200 p-5 rounded-2xl text-center">
-                <p class="text-[11px] font-black text-emerald-800 uppercase mb-3">🚀 Excel'den Liste Aktar</p>
+                <p class="text-[11px] font-black text-emerald-800 uppercase mb-3">🚀 Akıllı Excel Aktarımı</p>
                 <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden" onchange="importExcel(event)">
                 <button onclick="document.getElementById('excelInput').click()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold text-xs uppercase shadow-md active:scale-95 transition-all">Dosyayı Seç</button>
             </div>
@@ -42,7 +42,7 @@
         <div class="yakut-yesili p-8 text-white text-center rounded-b-[40px] shadow-2xl relative">
             <div class="absolute top-6 right-6 text-2xl cursor-pointer opacity-80 hover:opacity-100 transition-all" onclick="document.getElementById('settingsModal').classList.remove('hidden')">⚙️</div>
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">İnsert Elite Pro</h1>
-            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Executive v6.0</p>
+            <p class="text-[10px] opacity-60 uppercase font-bold tracking-[4px] mt-1 text-white">Omni Import v6.1</p>
         </div>
 
         <div class="flex bg-gray-100/50 backdrop-blur-md mx-6 -mt-6 rounded-2xl shadow-lg overflow-hidden z-50">
@@ -93,7 +93,10 @@
                 <div id="repResults" class="absolute top-full left-0 right-0 bg-white z-[100] rounded-xl shadow-2xl border hidden max-h-48 overflow-y-auto"></div>
             </div>
             <div class="bg-gray-900 p-6 rounded-[35px] shadow-2xl border-r-[12px] border-orange-600 text-white">
-                <input type="hidden" id="reportBarkod"><p id="dispName" class="font-black text-2xl uppercase italic tracking-tighter leading-tight text-white">Ürün Seçiniz</p><p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-2 text-white">Fiyat Bekleniyor...</p>
+                <input type="hidden" id="reportBarkod">
+                <input type="hidden" id="reportInsertPrice">
+                <p id="dispName" class="font-black text-2xl uppercase italic tracking-tighter leading-tight text-white">Ürün Seçiniz</p>
+                <p id="dispPrice" class="text-orange-500 font-bold uppercase text-xs mt-2 text-white">Fiyat Bekleniyor...</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div class="flex flex-col"><label class="text-[10px] font-black text-gray-400 uppercase ml-4 mb-1">Normal Satış</label><input type="number" id="nSales" placeholder="Adet" class="border-2 p-5 rounded-3xl text-center font-black text-2xl text-black shadow-inner"></div>
@@ -152,7 +155,7 @@
             document.getElementById('scanner-section').style.display = tab === 'liste' ? 'none' : 'block';
         }
 
-        // GİZLİ EXCEL YÜKLEME FONKSİYONU
+        // V6.1 - OMNI IMPORT (AKILLI EXCEL MOTORU)
         function importExcel(e) {
             const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
@@ -161,12 +164,31 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 let count = 0;
+                
                 for (let r of jsonData) {
-                    const name = r["Ürün Adı"] || r["İSİM"] || r["AD"] || r["Açıklama"];
-                    const barkod = String(r["Barkod"] || r["BARKOD"] || r["NO"]);
-                    const eskiFiyat = r["Eski Fiyat"] || r["ESKİ FİYAT"] || r["NORMAL"];
+                    let name = "", barkod = "", eskiFiyat = "", yeniFiyat = "";
+                    
+                    for (let key in r) {
+                        let k = key.toLowerCase().trim();
+                        if (k.includes('ürün') || k.includes('urun') || k.includes('isim') || k.includes('ad') || k.includes('açıklama')) {
+                            name = r[key];
+                        } else if (k.includes('barkod') || k.includes('kod') || k.includes('no') || k.includes('sku')) {
+                            barkod = String(r[key]);
+                        } else if (k.includes('raf') || k.includes('eski') || k.includes('normal') || (k.includes('fiyat') && !k.includes('indirim') && !k.includes('yeni') && !k.includes('insert'))) {
+                            eskiFiyat = r[key];
+                        } else if (k.includes('yeni') || k.includes('indirim') || k.includes('insert') || k.includes('kampanya')) {
+                            yeniFiyat = r[key];
+                        }
+                    }
+
                     if(barkod && name) {
-                        await db.products.put({ barkod, n: name, p: String(eskiFiyat || ""), img: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" });
+                        await db.products.put({ 
+                            barkod: String(barkod), 
+                            n: String(name), 
+                            p: String(eskiFiyat || "0"), 
+                            ip: String(yeniFiyat || "0"),
+                            img: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" 
+                        });
                         count++;
                     }
                 }
@@ -195,7 +217,8 @@
                             document.getElementById('reportBarkod').value = p.barkod;
                             document.getElementById('smartSearch').value = p.n;
                             document.getElementById('dispName').innerText = p.n;
-                            document.getElementById('dispPrice').innerText = `Normal: ${p.p} ₺`;
+                            document.getElementById('dispPrice').innerText = `Normal Fiyat: ${p.p} ₺`;
+                            document.getElementById('reportInsertPrice').value = p.ip || "0";
                             if(p.preImg) { document.getElementById('reportPreview').src = p.preImg; document.getElementById('reportPreview').classList.remove('hidden'); document.getElementById('repLabel').classList.add('hidden'); }
                         }
                         resDiv.classList.add('hidden');
@@ -206,7 +229,6 @@
             }
         }
 
-        // AKILLI HAVUZ: EKLENEN ÜRÜNLERİ YEŞİLE BOYAMA
         async function loadPoolList(val = '') {
             const container = document.getElementById('poolContainer'); container.innerHTML = '';
             let all = await db.products.toArray();
@@ -271,17 +293,18 @@
             const i = parseFloat(document.getElementById('iSales').value) || 0; 
             const action = document.getElementById('actionType').value;
             const img = document.getElementById('reportPreview').src;
+            const ip = document.getElementById('reportInsertPrice').value || "0";
+            
             db.products.get(b).then(p => {
                 if(!p || !img.startsWith("data")) return alert("Eksik veri!");
-                reportQueue.push({ barkod: b, info: p, normal: n, insert: i, action: action, img: img });
+                reportQueue.push({ barkod: b, info: p, normal: n, insert: i, action: action, img: img, insertPrice: ip });
                 document.getElementById('qCount').innerText = `${reportQueue.length} Ürün`;
                 document.getElementById('queueBar').style.transform = "translateY(0)";
                 
-                // Formu temizle ve havuzu güncelle (yeşil tik için)
                 document.getElementById('smartSearch').value = ''; document.getElementById('nSales').value = ''; document.getElementById('iSales').value = '';
                 document.getElementById('reportPreview').classList.add('hidden'); document.getElementById('repLabel').classList.remove('hidden');
                 document.getElementById('dispName').innerText = "Sıradaki?"; beep.play();
-                loadPoolList(); // Havuzu güncelle
+                loadPoolList(); 
                 setTimeout(toggleScanner, 500);
             });
         }
@@ -291,13 +314,10 @@
             const container = document.getElementById('pdf-pages-container');
             document.getElementById('pdf-date-cover').innerText = new Date().toLocaleDateString('tr-TR');
             
-            // 1. Kapak Sayfası
             const coverCanvas = await html2canvas(document.getElementById('pdf-cover'), { scale: 1.5 });
             pdf.addImage(coverCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
 
-            // 2. YÖNETİCİ ÖZETİ (Yeni Özellik)
             if(reportQueue.length > 0) {
-                // Maksimum ilk 25 ürünü listele (sayfa taşmasını önlemek için)
                 let topItems = reportQueue.slice(0, 25);
                 let trs = topItems.map(item => {
                     let pcn = item.normal > 0 ? ((item.insert - item.normal) / item.normal * 100).toFixed(0) : "100+";
@@ -312,15 +332,16 @@
                 pdf.addImage(summaryCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
             }
 
-            // 3. Detay Sayfaları (Orijinal Tasarım Korumalı)
             for (let item of reportQueue) {
                 const pcn = item.normal > 0 ? ((item.insert - item.normal) / item.normal * 100).toFixed(0) : "100+";
-                const pageHTML = `<div class="pdf-page"><div style="display: flex; gap: 40px; height: 100%;"><div style="flex: 1.1; display: flex; flex-direction: column;"><div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 40px; padding: 35px; flex-grow: 1;"><div style="height: 550px; background: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #eee;"><img src="${item.info.img}" style="max-width: 95%; max-height: 95%; object-fit: contain;"></div><div style="margin-top: 30px;"><h2 style="font-size: 34px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase;">${item.info.n}</h2><div style="height: 6px; background: #E67E22; width: 70px; margin: 15px 0;"></div><div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0;"><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0;"><span>SKU</span><span style="font-weight:900;">${item.barkod}</span></div><div style="display:flex; justify-content:space-between; padding:8px 0;"><span>Birim Fiyat</span><span style="font-weight:900; color:#004d40;">${item.info.p} TL</span></div></div></div></div></div><div style="flex: 0.9; display: flex; flex-direction: column; gap: 20px;"><div style="background: #004d40; color: white; border-radius: 30px; padding: 25px; text-align: center;"><p style="font-size: 10px; opacity: 0.6; text-transform: uppercase;">STRATEJİ</p><h2 style="font-size: 20px; font-weight: 900;">${item.action}</h2></div><div style="position: relative; height: 380px;"><img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 30px;"><div style="position: absolute; top: 20px; right: 20px; background: #E67E22; color: white; padding: 12px 24px; border-radius: 15px; font-weight: 900; font-size: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">%${pcn}</div></div><div style="background: #f0fdf4; border: 4px solid #dcfce7; border-radius: 35px; padding: 30px; flex-grow: 1;"><h4 style="color: #004d40; font-weight: 900; font-size: 11px; letter-spacing: 2px;">PERFORMANS ANALİZİ</h4><p style="font-size: 19px; color: #064e3b; font-weight: 700; font-style: italic; line-height: 1.4; margin-top: 15px;">${item.info.n} ürününde %${pcn} büyüme ile başarı kanıtlanmıştır.</p></div></div></div></div>`;
+                let iPriceLine = item.insertPrice && item.insertPrice !== "0" ? `<div style="display:flex; justify-content:space-between; padding:8px 0;"><span>İnsert Fiyatı</span><span style="font-weight:900; color:#E67E22;">${item.insertPrice} TL</span></div>` : '';
+                
+                const pageHTML = `<div class="pdf-page"><div style="display: flex; gap: 40px; height: 100%;"><div style="flex: 1.1; display: flex; flex-direction: column;"><div style="background: #f8fafc; border: 4px solid #f1f5f9; border-radius: 40px; padding: 35px; flex-grow: 1;"><div style="height: 550px; background: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #eee;"><img src="${item.info.img}" style="max-width: 95%; max-height: 95%; object-fit: contain;"></div><div style="margin-top: 30px;"><h2 style="font-size: 34px; font-weight: 900; color: #004d40; margin: 0; text-transform: uppercase;">${item.info.n}</h2><div style="height: 6px; background: #E67E22; width: 70px; margin: 15px 0;"></div><div style="background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0;"><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0;"><span>SKU</span><span style="font-weight:900;">${item.barkod}</span></div><div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0;"><span>Normal Fiyat</span><span style="font-weight:900; color:#004d40;">${item.info.p} TL</span></div>${iPriceLine}</div></div></div></div><div style="flex: 0.9; display: flex; flex-direction: column; gap: 20px;"><div style="background: #004d40; color: white; border-radius: 30px; padding: 25px; text-align: center;"><p style="font-size: 10px; opacity: 0.6; text-transform: uppercase;">STRATEJİ</p><h2 style="font-size: 20px; font-weight: 900;">${item.action}</h2></div><div style="position: relative; height: 380px;"><img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 30px;"><div style="position: absolute; top: 20px; right: 20px; background: #E67E22; color: white; padding: 12px 24px; border-radius: 15px; font-weight: 900; font-size: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">%${pcn}</div></div><div style="background: #f0fdf4; border: 4px solid #dcfce7; border-radius: 35px; padding: 30px; flex-grow: 1;"><h4 style="color: #004d40; font-weight: 900; font-size: 11px; letter-spacing: 2px;">PERFORMANS ANALİZİ</h4><p style="font-size: 19px; color: #064e3b; font-weight: 700; font-style: italic; line-height: 1.4; margin-top: 15px;">${item.info.n} ürününde %${pcn} büyüme ile başarı kanıtlanmıştır.</p></div></div></div></div>`;
                 container.innerHTML = pageHTML;
                 const pageCanvas = await html2canvas(container.firstElementChild, { scale: 1.5 });
                 pdf.addPage(); pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
             }
-            pdf.save(`ELITE_REPORT_v6.0.pdf`); location.reload();
+            pdf.save(`ELITE_REPORT_v6.1.pdf`); location.reload();
         }
 
         async function exportBackup() {
